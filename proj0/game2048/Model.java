@@ -96,11 +96,10 @@ public class Model extends Observable {
 
     /** A helper function of tilt. that will just movve everything in the side it was tilted
      * no merge will happen */
-    private boolean fillingBlank(int s, int j) {
+    private boolean fillingBlank(int s, int j, boolean changed) {
         Tile currentTile, changingTile = null;
         int changedTo;
-        boolean changed = false;
-        
+
         for (int i = s - 1; i >= 0; --i) {
             currentTile = tile(j, i);
             if (currentTile != null) { continue; }
@@ -111,8 +110,6 @@ public class Model extends Observable {
                 changingTile = tile(j, changedTo);
 
                 if (changingTile != null) { break; }
-
-                changed = true;
                 --changedTo;
             }
 
@@ -120,38 +117,26 @@ public class Model extends Observable {
                 break;
             } else {
                 board.move(j, i, changingTile);
+                changed = true;
             }
         }
 
         return changed;
     }
 
-    private boolean merging(int s, int j) {
-        Tile currentTile, changingTile = null;
-        int changedTo;
-        boolean changed = false;
+    private boolean merging(int s, int j, boolean changed) {
+        Tile currentTile, changingTile;
 
-        for (int i = s - 1; i >= 0; i -= 2) {
+        for (int i = s - 1; i > 0; --i) {
             currentTile = tile(j, i);
-            if (currentTile == null) { break; }
+            changingTile = tile(j, i - 1);
 
-            changedTo = i - 1;
+            if (currentTile == null || changingTile == null) { continue; }
 
-            while (changedTo >= 0) {
-                changingTile = tile(j, changedTo);
-
-                if (changingTile.value() == currentTile.value()) {
-                    break;
-                }
-
-                changed = true;
-                --changedTo;
-            }
-
-            if (changingTile == null) {
-                break;
-            } else {
+            if (changingTile.value() == currentTile.value()) {
                 board.move(j, i, changingTile);
+                score += 2 * currentTile.value();
+                changed = true;
             }
         }
 
@@ -171,7 +156,7 @@ public class Model extends Observable {
      *    and the trailing tile does not.
      * */
     public boolean tilt(Side side) {
-        boolean changed = false;
+        boolean changed = false, merged, moved;
         int s = size();
 
         board.setViewingPerspective(side);
@@ -179,7 +164,13 @@ public class Model extends Observable {
         // for the tilt to the Side SIDE. If the board changed, set the
         // changed local variable to true.
         for (int j = 0; j < s; ++j) {
-            changed = (fillingBlank(s, j) || changed);
+            moved = fillingBlank(s, j, changed);
+            merged = merging(s, j, moved);
+
+            // If there is a merge then move to fill the newly created empty spaces
+            if (merged) { fillingBlank(s, j, true); }
+
+            changed = moved || merged;
         }
 
         board.setViewingPerspective(Side.NORTH);
