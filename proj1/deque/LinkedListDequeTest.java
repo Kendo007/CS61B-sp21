@@ -1,5 +1,6 @@
 package deque;
 
+import edu.princeton.cs.algs4.StdRandom;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -115,15 +116,41 @@ public class LinkedListDequeTest {
 
     @Test
     public void getDataTest() {
-        LinkedListDeque<Integer> lld1 = new LinkedListDeque<Integer>();
+        LinkedListDeque<Integer> lld1 = new LinkedListDeque<>();
         for (int i = 0; i < 5001; i++) {
             lld1.addLast(i);
         }
 
-        assertEquals((long) 100, (long) lld1.get(100));
-        assertEquals((long) 2500, (long) lld1.get(2500));
-        assertEquals((long) 2501, (long) lld1.get(2501));
-        assertEquals((long) 5000, (long) lld1.get(5000));
+        assertEquals(100, (long) lld1.getRecursive(100));
+        assertEquals(2500, (long) lld1.get(2500));
+        assertEquals(2501, (long) lld1.getRecursive(2501));
+        assertEquals(5000, (long) lld1.getRecursive(5000));
         assertNull(lld1.get(10000));
+    }
+
+    @Test
+    public void randomizedTest() {
+        LinkedListDeque<Integer> L = new LinkedListDeque<>();
+        ArrayDeque<Integer> B = new ArrayDeque<>();
+
+        int N = 500000000;
+        for (int i = 0; i < N; i += 1) {
+            int operationNumber = StdRandom.uniform(0, 6);
+            if (operationNumber == 0) {
+                int randVal = StdRandom.uniform(0, 1000);
+                L.addLast(randVal);
+                B.addLast(randVal);
+            } else if (operationNumber == 1) {
+                int randVal = StdRandom.uniform(0, 1000);
+                L.addFirst(randVal);
+                B.addFirst(randVal);
+            } else if (operationNumber == 2 && !L.isEmpty()) {
+                assertEquals(L.removeFirst(), B.removeFirst());
+            } else if (operationNumber == 3 && !L.isEmpty()) {
+                assertEquals(L.removeLast(), B.removeLast());
+            } else if (operationNumber == 4) {
+                assertEquals(L.size(), B.size());
+            }
+        }
     }
 }

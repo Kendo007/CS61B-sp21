@@ -1,5 +1,6 @@
 package deque;
 
+import edu.princeton.cs.algs4.StdRandom;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -10,7 +11,6 @@ public class ArrayDequeTest {
     @Test
     /** Adds a few things to the list, checking isEmpty() and size() are correct,
      * finally printing the results.
-     *
      * && is the "and" operation. */
     public void addIsEmptySizeTest() {
         ArrayDeque<String> lld1 = new ArrayDeque<String>();
@@ -95,35 +95,68 @@ public class ArrayDequeTest {
         assertEquals("Should return null when removeLast is called on an empty Deque,", null, lld1.removeLast());
     }
 
-//    @Test
-//    /* Add large number of elements to deque; check if order is correct. */
-//    public void bigLLDequeTest() {
-//        ArrayDeque<Integer> lld1 = new ArrayDeque<Integer>();
-//        for (int i = 0; i < 1000000; i++) {
-//            lld1.addLast(i);
-//        }
-//
-//        for (double i = 0; i < 500000; i++) {
-//            assertEquals("Should have the same value", i, (double) lld1.removeFirst(), 0.0);
-//        }
-//
-//        for (double i = 999999; i > 500000; i--) {
-//            assertEquals("Should have the same value", i, (double) lld1.removeLast(), 0.0);
-//        }
-//
-//    }
+    @Test
+    /* Add large number of elements to deque; check if order is correct. */
+    public void bigLLDequeTest() {
+        ArrayDeque<Integer> lld1 = new ArrayDeque<Integer>();
+        for (int i = 0; i < 1000000; i++) {
+            lld1.addLast(i);
+        }
+
+        for (double i = 0; i < 500000; i++) {
+            assertEquals("Should have the same value", i, (double) lld1.removeFirst(), 0.0);
+        }
+
+        for (double i = 999999; i > 500000; i--) {
+            assertEquals("Should have the same value", i, (double) lld1.removeLast(), 0.0);
+        }
+
+    }
 
     @Test
     public void getDataTest() {
         ArrayDeque<Integer> lld1 = new ArrayDeque<Integer>();
-        for (int i = 0; i < 8; i++) {
+        for (int i = 0; i < 5001; i++) {
             lld1.addLast(i);
         }
 
-        assertEquals((long) 5, (long) lld1.get(5));
-        assertEquals((long) 0, (long) lld1.get(0));
-        assertEquals((long) 2, (long) lld1.get(2));
-        assertEquals((long) 7, (long) lld1.get(7));
+        assertEquals(100, (long) lld1.get(100));
+        assertEquals(2500, (long) lld1.get(2500));
+        assertEquals(2501, (long) lld1.get(2501));
+        assertEquals(5000, (long) lld1.get(5000));
         assertNull(lld1.get(10000));
+    }
+
+    @Test
+    public void randomizedTest() {
+        LinkedListDeque<Integer> L = new LinkedListDeque<>();
+        ArrayDeque<Integer> B = new ArrayDeque<>();
+
+        int N = 50000000;
+        for (int i = 0; i < N; i += 1) {
+            int operationNumber = StdRandom.uniform(0, 6);
+            if (operationNumber == 0) {
+                int randVal = StdRandom.uniform(0, 100000);
+                L.addLast(randVal);
+                B.addLast(randVal);
+            } else if (operationNumber == 1) {
+                int randVal = StdRandom.uniform(0, 100000);
+                L.addFirst(randVal);
+                B.addFirst(randVal);
+            } else if (operationNumber == 2 && !L.isEmpty()) {
+                assertEquals(L.removeFirst(), B.removeFirst());
+            } else if (operationNumber == 3 && !L.isEmpty()) {
+                assertEquals(L.removeLast(), B.removeLast());
+            } else if (operationNumber == 4) {
+                assertEquals(L.size(), B.size());
+            } else if (operationNumber == 5 && !L.isEmpty()) {
+                int randVal = StdRandom.uniform(0, L.size());
+                Integer val = L.get(randVal);
+                assertEquals(val, B.get(randVal));
+                assertEquals(val, L.getRecursive(randVal));
+            }
+        }
+
+        System.out.println();
     }
 }

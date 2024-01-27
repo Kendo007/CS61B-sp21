@@ -2,56 +2,134 @@ package deque;
 
 public class ArrayDeque<T> {
     private int size = 0;
-    private T[] items;
+    public T[] items;
+    private int start = 0, end;
 
     public ArrayDeque() {
-        items = (T[]) new Object[100];
+        items = (T[]) new Object[8];
+        end = items.length - 1;
     }
 
     public int size() { return size; }
 
     public boolean isEmpty() { return size == 0; }
 
+    /** resize the array according to capacity and also makes the circular array linear nature of the array.
+     * (eg. {5,6,7,1,2} -> {1,2,5,6,7,null...5 times} ) (This is not sorting i choose these numbers only for easy understanding.)
+     * @param capacity - the number to which array should be resized
+     */
+    public void resize(int capacity) {
+        T[] a = (T[]) new Object[capacity];
+
+        if (start <= end) {
+            System.arraycopy(items, start, a, 0, size);
+        } else {
+            System.arraycopy(items, start, a, 0, items.length - start);
+            System.arraycopy(items, 0, a, items.length - start, end + 1);
+        }
+
+        start = 0;
+        end = size - 1;
+        items = a;
+    }
+
     public void addFirst(T i) {
-        System.arraycopy(items, 0, items, 1, size);
-        items[0] = i;
+        if (size == items.length) {
+            resize(items.length * 2);
+        }
+
+        if (start == 0) {
+            start = items.length - 1;
+        } else {
+            --start;
+        }
+
+        items[start] = i;
         ++size;
     }
 
     public void addLast(T i) {
-        items[size] = i;
+        if (size == items.length) {
+            resize(items.length * 2);
+        }
+
+        if (end == items.length - 1) {
+            end = 0;
+        } else {
+            ++end;
+        }
+
+        items[end] = i;
         ++size;
+    }
+
+    /** Reduces items size if usage < 25%
+     */
+    private void reduceUsage() {
+        if ((items.length >= 16) && (size < items.length / 4)) {
+            resize(items.length / 4);
+        }
     }
 
     public T removeFirst() {
         if (isEmpty()) { return null; }
 
-        T temp = items[0];
-        System.arraycopy(items, 1, items, 0, size - 1);
-        --size;
+        T temp = items[start];
+        items[start] = null;
 
+        if (start == items.length - 1) {
+            start = 0;
+        } else {
+            ++start;
+        }
+
+        --size;
+        reduceUsage();
         return temp;
     }
 
     public T removeLast() {
         if (isEmpty()) { return null; }
 
-        T temp = items[size - 1];
-        items[size - 1] = null;
-        --size;
+        T temp = items[end];
+        items[end] = null;
 
+        if (end == 0) {
+            end = items.length - 1;
+        } else {
+            --end;
+        }
+
+        --size;
+        reduceUsage();
         return temp;
     }
 
     public T get(int index) {
         if (index >= size || index < 0) { return null; }
 
-        return items[index];
+        if (index + start < items.length) {
+            return items[index + start];
+        } else {
+            return items[index - (items.length - start)];
+        }
     }
 
     public void printDeque() {
-        for (int i = 0; i < size; ++i) {
-            System.out.print(items[i] + " ");
+        if (isEmpty()) { return; }
+
+        if (start <= end) {
+            for (int i = start; i <= end; ++i) {
+                System.out.print(items[i] + " ");
+            }
+        } else {
+            for (int i = start; i < items.length; ++i) {
+                System.out.print(items[i] + " ");
+            }
+
+            for (int i = 0; i <= end; ++i) {
+                System.out.print(items[i] + " ");
+            }
         }
 
         System.out.println();

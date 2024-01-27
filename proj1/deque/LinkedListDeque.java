@@ -89,10 +89,37 @@ public class LinkedListDeque<T> {
         return temp.data;
     }
 
-    public void printDeque() {
-        Node temp = sentinel;
+    private T helperGetRecursiveAfter(int index, Node temp, int n) {
+        if (index == n) {
+            return temp.data;
+        }
 
-        while (temp.after != sentinel) {
+        return helperGetRecursiveAfter(index, temp.after, n + 1);
+    }
+
+    private T helperGetRecursiveBefore(int index, Node temp, int n) {
+        if (index == n) {
+            return temp.data;
+        }
+
+        return helperGetRecursiveBefore(index, temp.before, n + 1);
+    }
+
+    public T getRecursive(int index) {
+        if (index >= size || index < 0) { return null; }
+
+        if (index < size / 2)
+            return helperGetRecursiveAfter(index, sentinel.after, 0);
+        else
+            return helperGetRecursiveBefore(size - index - 1, sentinel.before, 0);
+    }
+
+    public void printDeque() {
+        if (isEmpty()) { return; }
+
+        Node temp = sentinel.after;
+
+        while (temp != sentinel) {
             System.out.print(temp.data + " ");
             temp = temp.after;
         }
