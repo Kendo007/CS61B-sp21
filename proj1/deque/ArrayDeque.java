@@ -1,49 +1,49 @@
 package deque;
 
-public class ArrayDeque<Item> {
+public class ArrayDeque<T> {
     private int size = 0;
-    private Item[] items;
+    private T[] items;
 
     public ArrayDeque() {
-        items = (Item[]) new Object[100];
+        items = (T[]) new Object[100];
     }
 
     public int size() { return size; }
 
     public boolean isEmpty() { return size == 0; }
 
-    public void addFirst(Item i) {
+    public void addFirst(T i) {
         System.arraycopy(items, 0, items, 1, size);
         items[0] = i;
         ++size;
     }
 
-    public void addLast(Item i) {
+    public void addLast(T i) {
         items[size] = i;
         ++size;
     }
 
-    public Item removeFirst() {
+    public T removeFirst() {
         if (isEmpty()) { return null; }
 
-        Item temp = items[0];
+        T temp = items[0];
         System.arraycopy(items, 1, items, 0, size - 1);
         --size;
 
         return temp;
     }
 
-    public Item removeLast() {
+    public T removeLast() {
         if (isEmpty()) { return null; }
 
-        Item temp = items[size - 1];
+        T temp = items[size - 1];
         items[size - 1] = null;
         --size;
 
         return temp;
     }
 
-    public Item get(int index) {
+    public T get(int index) {
         if (index >= size || index < 0) { return null; }
 
         return items[index];

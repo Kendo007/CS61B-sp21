@@ -1,15 +1,15 @@
 package deque;
 
-public class LinkedListDeque<Item> {
+public class LinkedListDeque<T> {
     private Node sentinel;
     private int size = 0;
 
     private class Node {
-        private Item data;
+        private T data;
         private Node before;
         private Node after;
 
-        private Node(Item i, Node b, Node a) {
+        private Node(T i, Node b, Node a) {
             this.data = i;
             this.before = b;
             this.after = a;
@@ -24,12 +24,12 @@ public class LinkedListDeque<Item> {
 
     public boolean isEmpty() { return size == 0; }
 
-    private void addIfEmpty(Item i) {
+    private void addIfEmpty(T i) {
         sentinel.after = new Node(i, sentinel, sentinel);
         sentinel.before = sentinel.after;
     }
 
-    public void addFirst(Item i) {
+    public void addFirst(T i) {
         if (isEmpty()) {
             addIfEmpty(i);
         } else {
@@ -40,7 +40,7 @@ public class LinkedListDeque<Item> {
         ++size;
     }
 
-    public void addLast(Item i) {
+    public void addLast(T i) {
         if (isEmpty()) {
             addIfEmpty(i);
         } else {
@@ -51,10 +51,10 @@ public class LinkedListDeque<Item> {
         ++size;
     }
 
-    public Item removeFirst() {
+    public T removeFirst() {
         if (isEmpty()) { return null; }
 
-        Item temp = sentinel.after.data;
+        T temp = sentinel.after.data;
 
         sentinel.after = sentinel.after.after;
         sentinel.after.before = sentinel;
@@ -63,10 +63,10 @@ public class LinkedListDeque<Item> {
         return temp;
     }
 
-    public Item removeLast() {
+    public T removeLast() {
         if (isEmpty()) { return null; }
 
-        Item temp = sentinel.before.data;
+        T temp = sentinel.before.data;
 
         sentinel.before = sentinel.before.before;
         sentinel.before.after = sentinel;
@@ -75,7 +75,7 @@ public class LinkedListDeque<Item> {
         return temp;
     }
 
-    public Item get(int index) {
+    public T get(int index) {
         if (index >= size || index < 0) { return null; }
 
         Node temp = sentinel;
