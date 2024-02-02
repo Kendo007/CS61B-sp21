@@ -1,15 +1,18 @@
-/** Class that prints the Collatz sequence starting from a given number.
- *  @author YOUR NAME HERE
+/**
+ * Class that prints the Collatz sequence starting from a given number.
+ *
+ * @author Kheyanshu Garg
  */
 public class Collatz {
 
-    /** Returns a number of Collatz sequence based on the given number eg 5 -> 16, 12 -> 6 */
+    /**
+     * Returns a number of Collatz sequence based on the given number eg 5 -> 16, 12 -> 6
+     */
     public static int nextNumber(int n) {
-        if (n % 2 != 0) {
+        if (n % 2 != 0)
             return 3 * n + 1;
-        } else {
+        else
             return n / 2;
-        }
     }
 
     public static void main(String[] args) {
