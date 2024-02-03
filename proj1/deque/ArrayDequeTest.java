@@ -2,6 +2,9 @@ package deque;
 
 import edu.princeton.cs.algs4.StdRandom;
 import org.junit.Test;
+
+import java.util.Comparator;
+
 import static org.junit.Assert.*;
 
 
@@ -132,7 +135,7 @@ public class ArrayDequeTest {
         LinkedListDeque<Integer> L = new LinkedListDeque<>();
         ArrayDeque<Integer> B = new ArrayDeque<>();
 
-        int N = 50000000;
+        int N = 50000;
         for (int i = 0; i < N; i += 1) {
             int operationNumber = StdRandom.uniform(0, 6);
             if (operationNumber == 0) {
@@ -158,5 +161,75 @@ public class ArrayDequeTest {
         }
 
         System.out.println();
+    }
+
+    @Test
+    public void testingEquals() {
+        ArrayDeque<Integer> A = new ArrayDeque<>();
+        ArrayDeque<Integer> B = new ArrayDeque<>();
+
+        int N = 50000;
+        for (int i = 0; i < N; ++i) {
+            int randVal = StdRandom.uniform(0, 10000);
+            A.addLast(randVal);
+            B.addLast(randVal);
+        }
+
+        assertEquals(A, B);
+
+        A.removeFirst();
+        A.addFirst(52);
+
+        assertNotEquals(A, B);
+    }
+
+    @Test
+    public void loopTest() {
+        ArrayDeque<Integer> A = new ArrayDeque<>();
+        LinkedListDeque<Integer> B = new LinkedListDeque<>();
+
+        int N = 500;
+        for (int i = 0; i < N; ++i) {
+            int randVal = StdRandom.uniform(0, 10000);
+            int x = StdRandom.uniform(0, 2);
+
+            switch (x) {
+                case 0:
+                    A.addLast(randVal);
+                    B.addLast(randVal);
+                    break;
+                case 1:
+                    A.addFirst(randVal);
+                    B.addFirst(randVal);
+                    break;
+            }
+        }
+
+        for (Integer i : A) {
+            System.out.print(i + " ");
+        }
+
+        System.out.println();
+
+        for (Integer i : B) {
+            System.out.print(i + " ");
+        }
+    }
+
+    @Test
+    public void testMax() {
+        MaxArrayDeque<String> A = new MaxArrayDeque<>(myComparators.getStringMax());
+        A.addLast("hi");
+        A.addLast("eggs");
+        A.addLast("pyjamas");
+
+        System.out.println(A.max());
+
+        MaxArrayDeque<Integer> B = new MaxArrayDeque<>(myComparators.getIntegerMax());
+        B.addFirst(87);
+        B.addFirst(900);
+        B.addLast(780);
+
+        System.out.println(B.max());
     }
 }

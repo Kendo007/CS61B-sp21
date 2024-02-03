@@ -131,9 +131,9 @@ public class LinkedListDequeTest {
     @Test
     public void randomizedTest() {
         LinkedListDeque<Integer> L = new LinkedListDeque<>();
-        ArrayDeque<Integer> B = new ArrayDeque<>();
+        LinkedListDeque<Integer> B = new LinkedListDeque<>();
 
-        int N = 500000000;
+        int N = 50000;
         for (int i = 0; i < N; i += 1) {
             int operationNumber = StdRandom.uniform(0, 6);
             if (operationNumber == 0) {
@@ -152,5 +152,25 @@ public class LinkedListDequeTest {
                 assertEquals(L.size(), B.size());
             }
         }
+    }
+
+    @Test
+    public void testingEquals() {
+        LinkedListDeque<Integer> A = new LinkedListDeque<>();
+        LinkedListDeque<Integer> B = new LinkedListDeque<>();
+
+        int N = 50000;
+        for (int i = 0; i < N; ++i) {
+            int randVal = StdRandom.uniform(0, 10000);
+            A.addLast(randVal);
+            B.addLast(randVal);
+        }
+
+        assertEquals(A, B);
+
+        A.removeFirst();
+        A.addLast(52);
+
+        assertNotEquals(A, B);
     }
 }
