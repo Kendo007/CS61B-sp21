@@ -45,7 +45,7 @@ public class GuitarString {
      * the Karplus-Strong algorithm.
      */
     public void tic() {
-        Double newDouble = 0.996 * 0.5 * (buffer.removeFirst() + buffer.get(0));
+        Double newDouble = DECAY * 0.5 * (buffer.removeFirst() + buffer.get(0));
         buffer.addLast(newDouble);
     }
 
