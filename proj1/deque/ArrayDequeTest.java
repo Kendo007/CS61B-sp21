@@ -3,8 +3,6 @@ package deque;
 import edu.princeton.cs.algs4.StdRandom;
 import org.junit.Test;
 
-import java.util.Comparator;
-
 import static org.junit.Assert.*;
 
 
@@ -137,7 +135,7 @@ public class ArrayDequeTest {
 
         int N = 50000;
         for (int i = 0; i < N; i += 1) {
-            int operationNumber = StdRandom.uniform(0, 6);
+            int operationNumber = StdRandom.uniform(0, 7);
             if (operationNumber == 0) {
                 int randVal = StdRandom.uniform(0, 100000);
                 L.addLast(randVal);
@@ -157,6 +155,8 @@ public class ArrayDequeTest {
                 Integer val = L.get(randVal);
                 assertEquals(val, B.get(randVal));
                 assertEquals(val, L.getRecursive(randVal));
+            } else if (operationNumber == 6 && !L.isEmpty()) {
+                L.equals(B);
             }
         }
 
@@ -218,14 +218,14 @@ public class ArrayDequeTest {
 
     @Test
     public void testMax() {
-        MaxArrayDeque<String> A = new MaxArrayDeque<>(myComparators.getStringMax());
+        MaxArrayDeque<String> A = new MaxArrayDeque<>(MyComparators.getStringMax());
         A.addLast("hi");
         A.addLast("eggs");
         A.addLast("pyjamas");
 
         System.out.println(A.max());
 
-        MaxArrayDeque<Integer> B = new MaxArrayDeque<>(myComparators.getIntegerMax());
+        MaxArrayDeque<Integer> B = new MaxArrayDeque<>(MyComparators.getIntegerMax());
         B.addFirst(87);
         B.addFirst(900);
         B.addLast(780);

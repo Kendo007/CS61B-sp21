@@ -17,12 +17,12 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
     }
 
     /**
-     * resize the array according to capacity and also makes the circular array linear nature of the array.
-     * (eg. {5,6,7,1,2} -> {1,2,5,6,7,null...5 times} ) (This is not sorting i choose these numbers only for easy understanding.)
+     * resize the array according to capacity and also makes the circular array linear
+     * (eg. {5,6,7,1,2} -> {1,2,5,6,7,null...5 times} ) (not sorting)
      *
      * @param capacity - the number to which array should be resized
      */
-    public void resize(int capacity) {
+    private void resize(int capacity) {
         T[] a = (T[]) new Object[capacity];
 
         if (start < end) {
@@ -38,13 +38,15 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
     }
 
     public void addFirst(T i) {
-        if (size == items.length)
+        if (size == items.length) {
             resize(items.length * 2);
+        }
 
-        if (start == 0)
+        if (start == 0) {
             start = items.length - 1;
-        else
+        } else {
             --start;
+        }
 
 
         items[start] = i;
@@ -52,13 +54,15 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
     }
 
     public void addLast(T i) {
-        if (size == items.length)
+        if (size == items.length) {
             resize(items.length * 2);
+        }
 
-        if (end == items.length - 1)
+        if (end == items.length - 1) {
             end = 0;
-        else
+        } else {
             ++end;
+        }
 
         items[end] = i;
         ++size;
@@ -68,21 +72,24 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
      * Reduces items size if usage < 25%
      */
     private void reduceUsage() {
-        if ((items.length >= 16) && (size < items.length / 4))
+        if ((items.length >= 16) && (size < items.length / 4)) {
             resize(items.length / 4);
+        }
     }
 
     public T removeFirst() {
-        if (isEmpty())
+        if (isEmpty()) {
             return null;
+        }
 
         T temp = items[start];
         items[start] = null;
 
-        if (start == items.length - 1)
+        if (start == items.length - 1) {
             start = 0;
-        else
+        } else {
             ++start;
+        }
 
         --size;
         reduceUsage();
@@ -90,16 +97,18 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
     }
 
     public T removeLast() {
-        if (isEmpty())
+        if (isEmpty()) {
             return null;
+        }
 
         T temp = items[end];
         items[end] = null;
 
-        if (end == 0)
+        if (end == 0) {
             end = items.length - 1;
-        else
+        } else {
             --end;
+        }
 
         --size;
         reduceUsage();
@@ -107,13 +116,15 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
     }
 
     public T get(int index) {
-        if (index >= size || index < 0)
+        if (index >= size || index < 0) {
             return null;
+        }
 
-        if (index + start < items.length)
+        if (index + start < items.length) {
             return items[index + start];
-        else
+        } else {
             return items[index - (items.length - start)];
+        }
     }
 
     public void printDeque() {
@@ -160,19 +171,23 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
 
     @Override
     public boolean equals(Object o) {
-        if (o == null || this == o || this.getClass() != o.getClass()) {
+        if (o == null || this.getClass() != o.getClass()) {
             return false;
         }
 
-        ArrayDeque<T> oal = (ArrayDeque<T>) o;
+        if (this == o) {
+            return true;
+        }
 
-        if (this.size() != oal.size()) {
+        Deque<T> other = (Deque<T>) o;
+
+        if (this.size() != other.size()) {
             return false;
         }
 
         boolean isEqual;
         for (int i = 0; i < size(); ++i) {
-            isEqual = get(i).equals(oal.get(i));
+            isEqual = get(i).equals(other.get(i));
 
             if (!isEqual) {
                 return false;

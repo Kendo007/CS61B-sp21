@@ -1,7 +1,6 @@
 package deque;
 
 import java.util.Iterator;
-import java.util.Objects;
 
 public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
     private final Node sentinel;
@@ -44,8 +43,9 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
     }
 
     public T removeFirst() {
-        if (isEmpty())
+        if (isEmpty()) {
             return null;
+        }
 
         T temp = sentinel.after.data;
 
@@ -57,8 +57,9 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
     }
 
     public T removeLast() {
-        if (isEmpty())
+        if (isEmpty()) {
             return null;
+        }
 
         T temp = sentinel.before.data;
 
@@ -70,8 +71,9 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
     }
 
     public T get(int index) {
-        if (index >= size || index < 0)
+        if (index >= size || index < 0) {
             return null;
+        }
 
         Node temp = sentinel;
 
@@ -89,32 +91,37 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
     }
 
     private T helperGetRecursiveAfter(int index, Node temp, int n) {
-        if (index == n)
+        if (index == n) {
             return temp.data;
+        }
 
         return helperGetRecursiveAfter(index, temp.after, n + 1);
     }
 
     private T helperGetRecursiveBefore(int index, Node temp, int n) {
-        if (index == n)
+        if (index == n) {
             return temp.data;
+        }
 
         return helperGetRecursiveBefore(index, temp.before, n + 1);
     }
 
     public T getRecursive(int index) {
-        if (index >= size || index < 0)
+        if (index >= size || index < 0) {
             return null;
+        }
 
-        if (index < size / 2)
+        if (index < size / 2) {
             return helperGetRecursiveAfter(index, sentinel.after, 0);
-        else
+        } else {
             return helperGetRecursiveBefore(size - index - 1, sentinel.before, 0);
+        }
     }
 
     public void printDeque() {
-        if (isEmpty())
+        if (isEmpty()) {
             return;
+        }
 
         Node temp = sentinel.after;
 
@@ -147,29 +154,27 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
 
     @Override
     public boolean equals(Object o) {
-        if (o == null || this == o || this.getClass() != o.getClass()) {
+        if (o == null || this.getClass() != o.getClass()) {
             return false;
         }
 
-        LinkedListDeque<T> oll = (LinkedListDeque<T>) o;
+        if (this == o) {
+            return true;
+        }
 
-        if (this.size() != oll.size()) {
+        Deque<T> other = (Deque<T>) o;
+
+        if (this.size() != other.size()) {
             return false;
         }
 
-        Node myNode = this.sentinel.after;
-        Node otherNode = oll.sentinel.after;
         boolean isEqual;
-
-        while (myNode != sentinel) {
-            isEqual = myNode.data.equals(otherNode.data);
+        for (int i = 0; i < size(); ++i) {
+            isEqual = get(i).equals(other.get(i));
 
             if (!isEqual) {
                 return false;
             }
-
-            myNode = myNode.after;
-            otherNode = otherNode.after;
         }
 
         return true;
