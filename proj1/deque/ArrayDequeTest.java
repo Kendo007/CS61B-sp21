@@ -155,8 +155,8 @@ public class ArrayDequeTest {
                 Integer val = L.get(randVal);
                 assertEquals(val, B.get(randVal));
                 assertEquals(val, L.getRecursive(randVal));
-            } else if (operationNumber == 6 && !L.isEmpty()) {
-                L.equals(B);
+            } else if (operationNumber == 6) {
+                assertEquals(L, B);
             }
         }
 

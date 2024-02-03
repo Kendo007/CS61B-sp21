@@ -171,7 +171,7 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
 
     @Override
     public boolean equals(Object o) {
-        if (o == null || this.getClass() != o.getClass()) {
+        if (o == null) {
             return false;
         }
 
