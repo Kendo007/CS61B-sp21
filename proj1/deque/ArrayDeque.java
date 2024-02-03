@@ -145,6 +145,7 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
 
     private class ArrayListIterator implements Iterator<T> {
         int currentPos = 0;
+
         @Override
         public boolean hasNext() {
             return currentPos < size;
@@ -159,23 +160,25 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
 
     @Override
     public boolean equals(Object o) {
-        if (o instanceof ArrayDeque oal) {
-            if (this.size() != oal.size()) {
-                return false;
-            }
-
-            boolean isEqual;
-            for (int i = 0; i < size(); ++i) {
-                isEqual = get(i).equals(oal.get(i));
-
-                if (!isEqual) {
-                    return false;
-                }
-            }
-
-            return true;
+        if (o == null || this == o || this.getClass() != o.getClass()) {
+            return false;
         }
 
-        return false;
+        ArrayDeque<T> oal = (ArrayDeque<T>) o;
+
+        if (this.size() != oal.size()) {
+            return false;
+        }
+
+        boolean isEqual;
+        for (int i = 0; i < size(); ++i) {
+            isEqual = get(i).equals(oal.get(i));
+
+            if (!isEqual) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }
