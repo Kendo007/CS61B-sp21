@@ -1,7 +1,5 @@
 package capers;
 
-import jdk.jshell.execution.Util;
-
 import java.io.File;
 import java.io.IOException;
 
@@ -15,7 +13,6 @@ import static capers.Utils.*;
  *    - dogs/ -- folder containing all of the persistent data for dogs
  *    - story -- file containing the current story
  *
- * TODO: change the above structure if you do something different.
  */
 public class CapersRepository {
     /** Current Working Directory. */
@@ -56,7 +53,9 @@ public class CapersRepository {
      * Also prints out the dog's information using toString().
      */
     public static void makeDog(String name, String breed, int age) {
-        // TODO
+        Dog newDog = new Dog(name, breed, age);
+        System.out.println(newDog);
+        newDog.saveDog();
     }
 
     /**
@@ -66,6 +65,8 @@ public class CapersRepository {
      * @param name String name of the Dog whose birthday we're celebrating.
      */
     public static void celebrateBirthday(String name) {
-        // TODO
+        Dog oldDog = Dog.fromFile(name);
+        oldDog.haveBirthday();
+        oldDog.saveDog();
     }
 }
