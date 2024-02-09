@@ -2,7 +2,9 @@ package gitlet;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.Map;
 
 import static gitlet.Utils.*;
 
@@ -37,7 +39,7 @@ public class Repository {
      * else exits the program
      */
     public static void validateGitletRepo() {
-        if (Repository.GITLET_DIR.exists()) {
+        if (!Repository.GITLET_DIR.exists()) {
             System.out.println("Not in an initialized Gitlet directory.");
             System.exit(0);
         }
@@ -61,9 +63,10 @@ public class Repository {
         Branch b = new Branch("master", null);
         Utils.writeObject(Branch.ACTIVE_BRANCH, "master");
 
-        Commit initialCommit = new Commit("initial commit");
+        Commit initialCommit = new Commit();
         Utils.writeObject(Commit.LATEST_COMMIT, initialCommit);
-        b.addCommit();
+
+        b.addCommit("initial commit", new Date(0));
     }
 
     /**
@@ -96,6 +99,7 @@ public class Repository {
     }
 
     public static void commitFiles(String msg) {
+        validateGitletRepo();
         Branch br = Branch.getActiveBranch();
 
         Commit temp = readObject(Commit.LATEST_COMMIT, Commit.class);
@@ -106,6 +110,55 @@ public class Repository {
             System.exit(0);
         }
 
-        br.addCommit();
+        for (HashMap.Entry<String, String> i : temp.getFilesInCommit().entrySet()) {
+            if (i.getValue().equals(latestCommit.getSha(i.getKey()))) {
+                continue;
+            }
+
+            File f = Utils.join(CWD, i.getKey());
+            byte[] b = Utils.readContents(f);
+
+            String shaOfb = Utils.sha1(b);
+            File stored = Utils.join(OBJECTS_DIR, shaOfb.substring(0, 1));
+            stored.mkdir();
+
+            f = Utils.join(stored, shaOfb);
+            Utils.writeObject(f, b);
+        }
+
+        br.addCommit(msg, new Date());
+    }
+
+    public static void removeFile(String fileName) {
+        validateGitletRepo();
+        Branch br = Branch.getActiveBranch();
+
+        Commit temp = readObject(Commit.LATEST_COMMIT, Commit.class);
+        Commit latestCommit = br.getLatestCommit();
+
+        if (latestCommit.getSha(fileName) != null) {
+            File f = new File(CWD, fileName);
+            f.delete();
+        } else if (temp.getSha(fileName) != null) {
+            temp.removeFile(fileName);
+        } else {
+            System.out.println("No reason to remove the file.");
+        }
+    }
+
+    public static void printLog() {
+        Branch br = Branch.getActiveBranch();
+        Commit i = br.getLatestCommit();
+        String shaOfi = br.getShaOfLatest();
+
+        while (i != null) {
+            System.out.println("===");
+            System.out.println("commit " + shaOfi);
+            System.out.println(i);
+            System.out.println();
+
+            shaOfi = i.getParent();
+            i = Commit.getCommit(shaOfi);
+        }
     }
 }

@@ -3,10 +3,12 @@ package gitlet;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
 public class Branch implements Serializable {
+    private static final long serialVersionUID = 6529685098267757690L;
     /** Name of the branch */
     private final String branchName;
     /** List of splits where the branch and its ancestors are split */
@@ -14,7 +16,7 @@ public class Branch implements Serializable {
     /** Name of the current active branch */
     private final File THIS_BRANCH;
     /** Name of the last Commit in the given Branch */
-    private String latestCommit;
+    private String latestCommit = null;
     /** Folder where all the branches are saved */
     public static final File BRANCH_DIR = Utils.join(Repository.GITLET_DIR, "branches");
     /** File in which name of active branch is saved */
@@ -69,12 +71,15 @@ public class Branch implements Serializable {
         Branch newBranch = new Branch(name, points);
     }
 
-    public void addCommit() {
-        byte[] c = Utils.readContents(Commit.LATEST_COMMIT);
-        String shaOfc = Utils.sha1((Object) c);
+    public void addCommit(String msg, Date d) {
+        Commit c = Utils.readObject(Commit.LATEST_COMMIT, Commit.class);
+        c.setDate(d);
+        c.setParent(latestCommit);
+        c.setMsg(msg);
 
-        File newCommit = new File(Commit.COMMITS_DIR, shaOfc);
-        Utils.writeContents(newCommit, (Object) c);
+        String shaOfc = Utils.sha1(c.toString());
+        File newCommit = Utils.join(Commit.COMMITS_DIR, shaOfc);
+        Utils.writeObject(newCommit, c);
 
         latestCommit = shaOfc;
         this.saveBranch();
@@ -85,11 +90,5 @@ public class Branch implements Serializable {
      */
     public void saveBranch() {
         Utils.writeObject(THIS_BRANCH, this);
-    }
-
-    public static void main(String[] args) {
-        Repository.GITLET_DIR.mkdir();
-        BRANCH_DIR.mkdir();
-        Branch br = new Branch("master", null);
     }
 }
