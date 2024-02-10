@@ -42,6 +42,18 @@ public class Commit implements Serializable {
         return FILES_IN_COMMIT.get(filename);
     }
 
+    private static class firstSixCompare implements Comparator<String> {
+        private final int SIZE;
+        firstSixCompare(int s) {
+            SIZE = s;
+        }
+
+        @Override
+        public int compare(String s, String t1) {
+            return s.substring(0, SIZE).compareTo(t1.substring(0, SIZE));
+        }
+    }
+
     /**
      * @param shaOfCommit sha of the commit you want
      * @return commit object related to the sha
@@ -52,13 +64,12 @@ public class Commit implements Serializable {
         }
 
         File f = Utils.join(COMMITS_DIR, shaOfCommit);
-        if (shaOfCommit.length() == 6) {
+        if (shaOfCommit.length() < 40 && shaOfCommit.length() > 5) {
             List<String> l = Utils.plainFilenamesIn(COMMITS_DIR);
 
-            for (String i : l) {
-                if (shaOfCommit.equals(i.substring(0, 6))) {
-                    f = Utils.join(COMMITS_DIR, i);
-                }
+            int index = Collections.binarySearch(l, shaOfCommit, new firstSixCompare(shaOfCommit.length()));
+            if (index >= 0) {
+                f = Utils.join(COMMITS_DIR, l.get(index));
             }
         }
 
