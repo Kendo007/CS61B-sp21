@@ -1,11 +1,9 @@
 package gitlet;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 
 public class Branch implements Serializable {
     private static final long serialVersionUID = 6529685098267757690L;
@@ -13,75 +11,70 @@ public class Branch implements Serializable {
     private final String branchName;
     /** List of splits where the branch and its ancestors are split */
     private HashMap<String, String> splitPoints;
-    /** Name of the current active branch */
-    private final File THIS_BRANCH;
     /** Name of the last Commit in the given Branch */
-    private String latestCommit = null;
+    private final File HEAD;
     /** Folder where all the branches are saved */
     public static final File BRANCH_DIR = Utils.join(Repository.GITLET_DIR, "branches");
     /** File in which name of active branch is saved */
     public static final File ACTIVE_BRANCH = Utils.join(Repository.GITLET_DIR, "activeBranch");
+    /** Reference to head commits of all branches */
+    public static final File HEADS_DIR = Utils.join(Repository.GITLET_DIR, "heads");
 
     public Branch(String name, HashMap<String, String> points) {
-        List<String> branchList = Utils.plainFilenamesIn(BRANCH_DIR);
-
-        if (branchList != null && branchList.contains(name)) {
-            System.out.println("A branch with that name already exists.");
-            System.exit(0);
-        }
-
         branchName = name;
         splitPoints = points;
-        THIS_BRANCH  = Utils.join(BRANCH_DIR, branchName);
+        HEAD = Utils.join(HEADS_DIR, branchName);
 
+        Utils.writeObject(HEAD, getHeadActive());
         this.saveBranch();
     }
 
     /**
-     * @return Returns current active branch
+     * Returns name of the active branch
+     */
+    public static String getActiveBranchName() {
+        return Utils.readObject(ACTIVE_BRANCH, String.class);
+    }
+
+    /**
+     * Returns current active branch
      */
     public static Branch getActiveBranch() {
-        String name = Utils.readObject(ACTIVE_BRANCH, String.class);
-        File f = Utils.join(BRANCH_DIR, name);
+        File f = Utils.join(BRANCH_DIR, getActiveBranchName());
 
         return  Utils.readObject(f, Branch.class);
     }
 
     /**
-     * Returns sha of latest commit in the branch
+     * Returns head of the given branch
      */
-    public String getShaOfLatest() {
-        return latestCommit;
+    public static String getHead(String branchName) {
+        File latestCommit = Utils.join(HEADS_DIR, branchName);
+
+        return Utils.readObject(latestCommit, String.class);
     }
 
-    public Commit getLatestCommit() {
-        return Commit.getCommit(getShaOfLatest());
+    /**
+     * Returns head of the active branch
+     */
+    public static String getHeadActive() {
+        return getHead(getActiveBranchName());
     }
 
     public void createNewBranch(String name) {
-        HashMap<String, String> points;
+        splitPoints.put(name, getHead(branchName));
 
-        if (splitPoints != null) {
-            points = new HashMap<>(splitPoints);
-        } else {
-            points = new HashMap<>();
-        }
-
-        points.put(name, latestCommit);
-        Branch newBranch = new Branch(name, points);
+        new Branch(name, splitPoints);
     }
 
-    public void addCommit(String msg, Date d) {
-        Commit c = Utils.readObject(Commit.LATEST_COMMIT, Commit.class);
-        c.setDate(d);
-        c.setParent(latestCommit);
-        c.setMsg(msg);
+    public void addCommit(String msg, Date d, HashMap<String, String> temp) {
+        Commit c = new Commit(d, getHead(branchName), msg, temp);
 
         String shaOfc = Utils.sha1(c.toString());
         File newCommit = Utils.join(Commit.COMMITS_DIR, shaOfc);
         Utils.writeObject(newCommit, c);
 
-        latestCommit = shaOfc;
+        Utils.writeObject(HEAD, shaOfc);
         this.saveBranch();
     }
 
@@ -89,6 +82,7 @@ public class Branch implements Serializable {
      * Saves the current branch in branches folder
      */
     public void saveBranch() {
-        Utils.writeObject(THIS_BRANCH, this);
+        File f = Utils.join(BRANCH_DIR, branchName);
+        Utils.writeObject(f, this);
     }
 }

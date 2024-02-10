@@ -18,14 +18,21 @@ public class Commit implements Serializable {
     /** The message of this Commit. */
     private String message;
     /** Reference to all the files in the commit */
-    private HashMap<String, String> filesInCommit = new HashMap<>();
+    private HashMap<String, String> filesInCommit;
     /** Date at which commit was made */
     private Date commitDate;
     /** Sha of the parent commit */
     private String parentCommit;
     /** Folder in which commits are stored */
     public static final File COMMITS_DIR = Utils.join(Repository.GITLET_DIR, "commits");
-    public static final File LATEST_COMMIT = Utils.join(Repository.GITLET_DIR, "latestcommit");
+    public static final File LATEST_MAP = Utils.join(Repository.GITLET_DIR, "latestcommit");
+
+    public Commit(Date d, String shaOParent, String msg, HashMap<String, String> files) {
+        commitDate = d;
+        parentCommit = shaOParent;
+        message = msg;
+        filesInCommit = files;
+    }
 
     /** Returns the Sha of the given filename
      *
@@ -49,16 +56,8 @@ public class Commit implements Serializable {
         return Utils.readObject(f, Commit.class);
     }
 
-    public void setDate(Date d) {
-        commitDate = d;
-    }
-
-    public void setParent(String s) {
-        parentCommit = s;
-    }
-
-    public void setMsg(String s) {
-        message = s;
+    public String getMsg() {
+        return message;
     }
 
     public String getParent() {
@@ -67,22 +66,6 @@ public class Commit implements Serializable {
 
     public HashMap<String, String> getFilesInCommit() {
         return filesInCommit;
-    }
-
-    public void removeFile(String fileName, String currFileSha) {
-        filesInCommit.remove(fileName, currFileSha);
-    }
-
-    public void removeFile(String fileName) {
-        filesInCommit.remove(fileName);
-    }
-
-    public void putFile(String fileName, String currFileSha) {
-        filesInCommit.put(fileName, currFileSha);
-    }
-
-    public boolean isSame(Commit other) {
-        return filesInCommit.equals(other.filesInCommit);
     }
 
     public String toString() {

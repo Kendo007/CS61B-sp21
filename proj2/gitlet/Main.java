@@ -39,6 +39,22 @@ public class Main {
                 validateNumArgs(args, 1, "");
                 Repository.printLog();
                 break;
+            case "global-log":
+                validateNumArgs(args, 1, "");
+                Repository.globalLog();
+                break;
+            case "find":
+                validateNumArgs(args, 2, "");
+                Repository.findCommits(args[1]);
+                break;
+            case "status":
+                validateNumArgs(args, 1, "");
+                Repository.printStatus();
+                break;
+            case "branch":
+                validateNumArgs(args, 2, "");
+                Repository.createBranch(args[1]);
+                break;
             default:
                 System.out.println("No command with that name exists.");
                 System.exit(0);
