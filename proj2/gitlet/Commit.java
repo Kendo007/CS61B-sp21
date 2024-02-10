@@ -1,11 +1,9 @@
 package gitlet;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.io.File;
-import java.util.Date;
-import java.util.Formatter;
-import java.util.HashMap;
-import java.util.Locale;
+import java.util.*;
 
 /** Represents a gitlet commit object.
  *  TODO: It's a good idea to give a description here of what else this Class
@@ -14,24 +12,25 @@ import java.util.Locale;
  *  @author Kheyanshu Garg
  */
 public class Commit implements Serializable {
+    @Serial
     private static final long serialVersionUID = 65296850946917690L;
     /** The message of this Commit. */
-    private String message;
+    private final String MSG;
     /** Reference to all the files in the commit */
-    private HashMap<String, String> filesInCommit;
+    private final HashMap<String, String> FILES_IN_COMMIT;
     /** Date at which commit was made */
-    private Date commitDate;
+    private final Date TIMESTAMP;
     /** Sha of the parent commit */
-    private String parentCommit;
+    private final String PARENT_COMMIT;
     /** Folder in which commits are stored */
     public static final File COMMITS_DIR = Utils.join(Repository.GITLET_DIR, "commits");
     public static final File LATEST_MAP = Utils.join(Repository.GITLET_DIR, "latestcommit");
 
     public Commit(Date d, String shaOParent, String msg, HashMap<String, String> files) {
-        commitDate = d;
-        parentCommit = shaOParent;
-        message = msg;
-        filesInCommit = files;
+        TIMESTAMP = d;
+        PARENT_COMMIT = shaOParent;
+        MSG = msg;
+        FILES_IN_COMMIT = files;
     }
 
     /** Returns the Sha of the given filename
@@ -40,7 +39,7 @@ public class Commit implements Serializable {
      * @return stored sha in the map
      */
     public String getSha(String filename) {
-        return filesInCommit.get(filename);
+        return FILES_IN_COMMIT.get(filename);
     }
 
     /**
@@ -53,19 +52,34 @@ public class Commit implements Serializable {
         }
 
         File f = Utils.join(COMMITS_DIR, shaOfCommit);
+        if (shaOfCommit.length() == 6) {
+            List<String> l = Utils.plainFilenamesIn(COMMITS_DIR);
+
+            for (String i : l) {
+                if (shaOfCommit.equals(i.substring(0, 6))) {
+                    f = Utils.join(COMMITS_DIR, i);
+                }
+            }
+        }
+
+        if (!f.exists()) {
+            System.out.println("No commit with that id exists.");
+            System.exit(0);
+        }
+
         return Utils.readObject(f, Commit.class);
     }
 
     public String getMsg() {
-        return message;
+        return MSG;
     }
 
     public String getParent() {
-        return parentCommit;
+        return PARENT_COMMIT;
     }
 
     public HashMap<String, String> getFilesInCommit() {
-        return filesInCommit;
+        return FILES_IN_COMMIT;
     }
 
     public String toString() {
@@ -74,10 +88,10 @@ public class Commit implements Serializable {
         Locale IND = new Locale("en", "IN");
         Formatter formatter = new Formatter(sb, IND);
 
-        formatter.format("%ta %tb %td %tT %tY %tz", commitDate, commitDate, commitDate,
-                commitDate, commitDate, commitDate);
+        formatter.format("%ta %tb %td %tT %tY %tz", TIMESTAMP, TIMESTAMP, TIMESTAMP,
+                TIMESTAMP, TIMESTAMP, TIMESTAMP);
         sb.append("\n");
-        sb.append(message);
+        sb.append(MSG);
 
         return sb.toString();
     }

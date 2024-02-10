@@ -1,15 +1,15 @@
 package gitlet;
 
-import java.io.File;
-import java.io.IOException;
-
-/** Driver class for Gitlet, a subset of the Git version-control system.
- *  @author Kheyanshu Garg
+/**
+ * Driver class for Gitlet, a subset of the Git version-control system.
+ *
+ * @author Kheyanshu Garg
  */
 public class Main {
 
-    /** Usage: java gitlet.Main ARGS, where ARGS contains
-     *  <COMMAND> <OPERAND1> <OPERAND2> ...
+    /**
+     * Usage: java gitlet.Main ARGS, where ARGS contains
+     * <COMMAND> <OPERAND1> <OPERAND2> ...
      */
     public static void main(String[] args) {
         if (args.length == 0) {
@@ -18,7 +18,7 @@ public class Main {
         }
 
         String firstArg = args[0];
-        switch(firstArg) {
+        switch (firstArg) {
             case "init":
                 validateNumArgs(args, 1, "");
                 Repository.createRepository();
@@ -55,6 +55,23 @@ public class Main {
                 validateNumArgs(args, 2, "");
                 Repository.createBranch(args[1]);
                 break;
+            case "checkout":
+                if (args.length == 3 && args[1].equals("--")) {
+                    Repository.checkOutFile(Branch.getHeadActive(), args[2]);
+                } else if (args.length == 4 && args[2].equals("--")) {
+                    Repository.checkOutFile(args[1], args[3]);
+                } else if (args.length == 2) {
+                    Repository.checkOutBranch(args[1]);
+                }
+                break;
+            case "rm-branch":
+                validateNumArgs(args, 2, "");
+                Repository.removeBranch(args[1]);
+                break;
+            case "reset":
+                validateNumArgs(args, 2, "");
+                Repository.reset(args[1]);
+                break;
             default:
                 System.out.println("No command with that name exists.");
                 System.exit(0);
@@ -62,13 +79,12 @@ public class Main {
     }
 
     /**
+     * @param args  Argument array from command line
+     * @param n     Number of expected arguments
+     * @param error Error message you want to print
      * @source lab6/capers/Main
      * Checks the number of arguments versus the expected number,
      * throws a RuntimeException if they do not match.
-     *
-     * @param args Argument array from command line
-     * @param n    Number of expected arguments
-     * @param error Error message you want to print
      */
     private static void validateNumArgs(String[] args, int n, String error) {
         if (args.length != n) {
