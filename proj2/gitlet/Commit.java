@@ -54,6 +54,20 @@ public class Commit implements Serializable {
         }
     }
 
+    public static String getFullCommit(String halfCommit) {
+        List<String> l = Utils.plainFilenamesIn(COMMITS_DIR);
+
+        int index = Collections.binarySearch(l, halfCommit, new firstSixCompare(halfCommit.length()));
+        if (index >= 0) {
+            return l.get(index);
+        }
+
+        System.out.println("No commit with that id exists.");
+        System.exit(0);
+
+        return null;
+    }
+
     /**
      * @param shaOfCommit sha of the commit you want
      * @return commit object related to the sha
@@ -64,13 +78,10 @@ public class Commit implements Serializable {
         }
 
         File f = Utils.join(COMMITS_DIR, shaOfCommit);
-        if (shaOfCommit.length() < 40 && shaOfCommit.length() > 5) {
-            List<String> l = Utils.plainFilenamesIn(COMMITS_DIR);
 
-            int index = Collections.binarySearch(l, shaOfCommit, new firstSixCompare(shaOfCommit.length()));
-            if (index >= 0) {
-                f = Utils.join(COMMITS_DIR, l.get(index));
-            }
+        if (shaOfCommit.length() < 40 && shaOfCommit.length() > 5) {
+            String fullCommit = getFullCommit(shaOfCommit);
+            f = Utils.join(COMMITS_DIR, fullCommit);
         }
 
         if (!f.exists()) {

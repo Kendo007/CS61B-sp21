@@ -63,6 +63,13 @@ class Utils {
         return sha1(vals.toArray(new Object[vals.size()]));
     }
 
+    /**
+     * Returns the first 10 digits of a sha 1 hash
+     */
+    static String sha1Object(Object ...vals) {
+        return sha1(vals).substring(0, 10);
+    }
+
     /* FILE DELETION */
 
     /** Deletes FILE if it exists and is not a directory.  Returns true

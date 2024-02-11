@@ -92,7 +92,7 @@ public class Repository {
             System.exit(0);
         }
 
-        String currFileSha = Utils.sha1(readContents(currFile));
+        String currFileSha = Utils.sha1Object(readContents(currFile));
 
         HashMap<String, String> temp = readObject(Commit.LATEST_MAP, HashMap.class);
         Commit latestCommit = Commit.getCommit(Branch.getHeadActive());
@@ -125,7 +125,7 @@ public class Repository {
             File f = Utils.join(CWD, i);
             byte[] b = Utils.readContents(f);
 
-            String shaOfb = Utils.sha1(b);
+            String shaOfb = Utils.sha1Object(b);
             File stored = Utils.join(OBJECTS_DIR, shaOfb.substring(0, 1));
             stored.mkdir();
 
@@ -274,17 +274,30 @@ public class Repository {
         }
 
         System.out.println("\n=== Modifications Not Staged For Commit ===");
-        // TODO
+        HashMap<String, String> temp = Utils.readObject(Commit.LATEST_MAP, HashMap.class);
+        TreeSet<String> modified = new TreeSet<>();
+
+        for (Map.Entry<String, String> i : temp.entrySet()) {
+            File inCWD = Utils.join(CWD, i.getKey());
+
+            if (inCWD.exists()) {
+                String inCWDSha = Utils.sha1Object(Utils.readContents(inCWD));
+
+                // Checking if staged contents are same as in working directory
+                if (!inCWDSha.equals(i.getValue())) {
+                    modified.add(i.getKey() + " (modified)");
+                }
+            } else {
+                modified.add(i.getKey() + " (deleted)");
+            }
+        }
+
+        for (String i : modified) {
+            System.out.println(i);
+        }
 
         System.out.println("\n=== Untracked Files ===");
         List<String> dr = Utils.plainFilenamesIn(CWD);
-
-        if (dr == null) {
-            System.out.println();
-            return;
-        }
-
-        HashMap<String, String> temp = Utils.readObject(Commit.LATEST_MAP, HashMap.class);
         TreeSet<String> untracked = untrackedFiles(dr, temp, true);
 
         for (String i : untracked) {
@@ -397,8 +410,10 @@ public class Repository {
     public static void reset(String shaOfCommit) {
         validateGitletRepo();
 
-        copyFromREPO(shaOfCommit);
+        String fullCommit = Commit.getFullCommit(shaOfCommit);
+        copyFromREPO(fullCommit);
+
         File Head = Utils.join(Branch.HEADS_DIR, Branch.getActiveBranchName());
-        Utils.writeObject(Head, shaOfCommit);
+        Utils.writeObject(Head, fullCommit);
     }
 }
