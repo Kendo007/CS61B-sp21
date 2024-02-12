@@ -6,7 +6,8 @@ import java.io.File;
 import java.util.*;
 
 /** Represents a gitlet commit object.
- *  TODO: It's a good idea to give a description here of what else this Class
+ * Also used for returning commits from the commits directory
+ * or getting files SHA from the filesCommits
  *  does at a high level.
  *
  *  @author Kheyanshu Garg
@@ -26,8 +27,6 @@ public class Commit implements Serializable {
     private String secondParent = null;
     /** Folder in which commits are stored */
     public static final File COMMITS_DIR = Utils.join(Repository.GITLET_DIR, "commits");
-    /** All the files that should be tracked and untracked in the next commit */
-    public static final File LATEST_MAP = Utils.join(Repository.STAGING_AREA, "nextMap");
 
     public Commit(Date d, String shaOParent, String msg, HashMap<String, String> files) {
         TIMESTAMP = d;
@@ -36,7 +35,8 @@ public class Commit implements Serializable {
         FILES_IN_COMMIT = files;
     }
 
-    public Commit(Date d, String shaOParent, String secondParent, String msg, HashMap<String, String> files) {
+    public Commit(Date d, String shaOParent, String secondParent,
+                  String msg, HashMap<String, String> files) {
         this(d, shaOParent, msg, files);
         this.secondParent = secondParent;
     }
@@ -50,7 +50,7 @@ public class Commit implements Serializable {
         return FILES_IN_COMMIT.get(filename);
     }
 
-    private static class firstXCompare implements Comparator<String> {
+    private static class FirstXCompare implements Comparator<String> {
         @Override
         public int compare(String s1, String s2) {
             int limit = Math.min(s1.length(), s2.length());
@@ -75,7 +75,7 @@ public class Commit implements Serializable {
 
         List<String> l = Utils.plainFilenamesIn(COMMITS_DIR);
 
-        int index = Collections.binarySearch(l, halfCommit, new firstXCompare());
+        int index = Collections.binarySearch(l, halfCommit, new FirstXCompare());
         if (index >= 0) {
             return l.get(index);
         }
@@ -117,21 +117,27 @@ public class Commit implements Serializable {
         return FILES_IN_COMMIT;
     }
 
+    /** Used to convert the given commit to a string
+     *
+     * @return String of commit
+     */
     public String toString() {
-        StringBuilder sb = new StringBuilder("Date: ");
+        StringBuilder sb = new StringBuilder();
 
-        Locale IND = new Locale("en", "IN");
-        Formatter formatter = new Formatter(sb, IND);
-
-        formatter.format("%ta %tb %td %tT %tY %tz", TIMESTAMP, TIMESTAMP, TIMESTAMP,
-                TIMESTAMP, TIMESTAMP, TIMESTAMP);
+        Locale ind = new Locale("en", "IN");
+        Formatter formatter = new Formatter(sb, ind);
 
         if (secondParent != null) {
-            sb.append("\nMerge: ");
-            sb.append(PARENT_COMMIT, 0, 6);
-            sb.append(secondParent, 0, 6);
+            sb.append("Merge: ");
+            sb.append(PARENT_COMMIT, 0, 7);
+            sb.append(" ");
+            sb.append(secondParent, 0, 7);
+            sb.append("\n");
         }
 
+        sb.append("Date: ");
+        formatter.format("%ta %tb %td %tT %tY %tz", TIMESTAMP, TIMESTAMP, TIMESTAMP,
+                TIMESTAMP, TIMESTAMP, TIMESTAMP);
         sb.append("\n");
         sb.append(MSG);
 

@@ -62,6 +62,7 @@ public class Branch {
             Files.copy(lastCommitPath.resolve(activeBranchName), lastCommitPath.resolve(newBranchName),
                     StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException ignored) {
+            return;
         }
     }
 
@@ -100,8 +101,10 @@ public class Branch {
 
     public static void mergeBranch(String branchOne, String branchTwo) {
         // Files in head of split point and both branches
-        HashMap<String, String> branchOneFiles = getCommit(getHead(branchOne)).getFilesInCommit();
-        HashMap<String, String> branchTwoFiles = getCommit(getHead(branchTwo)).getFilesInCommit();
+        Commit branchOneCommit = getCommit(getHead(branchOne));
+        Commit branchTwoCommit = getCommit(getHead(branchOne));
+        HashMap<String, String> branchOneFiles = branchOneCommit.getFilesInCommit();
+        HashMap<String, String> branchTwoFiles = branchTwoCommit.getFilesInCommit();
         HashMap<String, String> splitPointFiles = getSplitPoint(branchOne, branchTwo);
 
 
