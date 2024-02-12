@@ -1,9 +1,15 @@
 package gitlet;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 
 import static gitlet.Utils.*;
+import static gitlet.Branch.*;
+import static gitlet.Commit.*;
 
 /**
  * Represents a gitlet repository.
@@ -13,30 +19,20 @@ import static gitlet.Utils.*;
  * @author Kheyanshu Garg
  */
 public class Repository {
-    /**
-     * The current working directory.
-     */
+    /** The current working directory. */
     public static final File CWD = new File(System.getProperty("user.dir"));
-    /**
-     * The .gitlet directory.
-     */
+    /** The .gitlet directory. */
     public static final File GITLET_DIR = join(CWD, ".gitlet");
-    /**
-     * Folder where staged files are stored
-     */
+    /** Folder where staged files are stored */
     public static final File STAGING_AREA = join(GITLET_DIR, "staging");
-    /**
-     * All the files that are ready to be committed
-     */
+    /** All the files that are ready to be committed */
     public static final File STAGED_ADD = join(STAGING_AREA, "add");
-    /**
-     * All the files that are ready to be removed
-     */
+    /** All the files that are ready to be removed */
     public static final File STAGED_REMOVED = join(STAGING_AREA, "remove");
-    /**
-     * files are stored in this folder
-     */
-    public static final File OBJECTS_DIR = Utils.join(GITLET_DIR, "objects");
+    /** Stores temporary files for add */
+    public static final File TEMP = join(STAGING_AREA, "temp");
+    /** files are stored in this folder */
+    public static final File OBJECTS_DIR = join(GITLET_DIR, "objects");
 
     /**
      * Checks if gitlet repository exists
@@ -60,22 +56,23 @@ public class Repository {
             return;
         }
 
+        // Setting up various empty directories
         GITLET_DIR.mkdir();
         OBJECTS_DIR.mkdir();
+        COMMITS_DIR.mkdir();
+        LAST_COMMIT.mkdir();
+
+        // Setting up branches
+        writeObject(HEAD, "master");
+        writeObject(join(LAST_COMMIT, "master"), null);
+        addCommit("initial commit", new Date(0), new HashMap<>());
+
+        // Setting up Staging Area
         STAGING_AREA.mkdir();
-        Branch.HEADS_DIR.mkdir();
-        Branch.BRANCH_DIR.mkdir();
-        Commit.COMMITS_DIR.mkdir();
-
-        Utils.writeObject(Branch.ACTIVE_BRANCH, "master");
-        Utils.writeObject(Utils.join(Branch.HEADS_DIR, "master"), null);
-
-        Branch b = new Branch("master", new HashMap<>());
-        b.addCommit("initial commit", new Date(0), new HashMap<>());
-
-        Utils.writeObject(STAGED_ADD, new TreeSet<>());
-        Utils.writeObject(STAGED_REMOVED, new TreeSet<>());
-        Utils.writeObject(Commit.LATEST_MAP, new HashMap<>());
+        TEMP.mkdir();
+        writeObject(STAGED_ADD, new TreeSet<>());
+        writeObject(STAGED_REMOVED, new TreeSet<>());
+        writeObject(LATEST_MAP, new HashMap<>());
     }
 
     /**
@@ -92,84 +89,94 @@ public class Repository {
             System.exit(0);
         }
 
-        String currFileSha = Utils.sha1Object(readContents(currFile));
+        Object currFileContents = (Object) readContents(currFile);
+        String currFileSha = sha1Object(currFileContents, fileName);
 
-        HashMap<String, String> temp = readObject(Commit.LATEST_MAP, HashMap.class);
-        Commit latestCommit = Commit.getCommit(Branch.getHeadActive());
+        TreeSet<String> stage_add = readObject(STAGED_ADD, TreeSet.class);
+
+        Commit latestCommit = getCommit(getHeadActive());
         String storedFileSha = latestCommit.getSha(fileName);
 
-        TreeSet<String> stage = Utils.readObject(STAGED_ADD, TreeSet.class);
-
         if (currFileSha.equals(storedFileSha)) {
-            stage.remove(fileName);
+            stage_add.remove(fileName);
         } else {
-            stage.add(fileName);
+            HashMap<String, String> temp = readObject(LATEST_MAP, HashMap.class);
+
+            stage_add.add(fileName);
+
+            if (temp.containsKey(fileName)) {
+                File uneccesary = join(TEMP, temp.get(fileName));
+                uneccesary.delete();
+            }
+            temp.put(fileName, currFileSha);
+
+            writeContents(join(TEMP, currFileSha), currFileContents);
+            writeObject(LATEST_MAP, temp);
         }
 
-        temp.put(fileName, currFileSha);
-        Utils.writeObject(Commit.LATEST_MAP, temp);
-        Utils.writeObject(STAGED_ADD, stage);
+        writeObject(STAGED_ADD, stage_add);
     }
 
     public static void commitFiles(String msg) {
         validateGitletRepo();
 
-        TreeSet<String> stage = Utils.readObject(STAGED_ADD, TreeSet.class);
-        TreeSet<String> stage_remove = Utils.readObject(STAGED_REMOVED, TreeSet.class);
-        if (stage.isEmpty() && stage_remove.isEmpty()) {
+        TreeSet<String> stage_add = readObject(STAGED_ADD, TreeSet.class);
+        TreeSet<String> stage_remove = readObject(STAGED_REMOVED, TreeSet.class);
+        if (stage_add.isEmpty() && stage_remove.isEmpty()) {
             System.out.println("No changes added to the commit.");
             System.exit(0);
         }
 
-        for (String i : stage) {
-            File f = Utils.join(CWD, i);
-            byte[] b = Utils.readContents(f);
-
-            String shaOfb = Utils.sha1Object(b);
-            File stored = Utils.join(OBJECTS_DIR, shaOfb.substring(0, 1));
-            stored.mkdir();
-
-            f = Utils.join(stored, shaOfb);
-            Utils.writeContents(f, b);
+        List<String> tempFiles = plainFilenamesIn(TEMP);
+        if (tempFiles != null) {
+            for (String i : tempFiles) {
+                File startDir = join(OBJECTS_DIR, i.substring(0, 1));
+                startDir.mkdir();
+                try {
+                    Files.move(TEMP.toPath().resolve(i), startDir.toPath().resolve(i),
+                            StandardCopyOption.REPLACE_EXISTING);
+                } catch (IOException ignored) {
+                }
+            }
         }
 
-        HashMap<String, String> temp = Utils.readObject(Commit.LATEST_MAP, HashMap.class);
-        for (String i : stage_remove) {
-            temp.remove(i);
-        }
-
-        Branch br = Branch.getActiveBranch();
-        br.addCommit(msg, new Date(), temp);
-        Utils.writeObject(STAGED_ADD, new TreeSet<>());
-        Utils.writeObject(STAGED_REMOVED, new TreeSet<>());
+        addCommit(msg, new Date(), readObject(LATEST_MAP, HashMap.class));
+        writeObject(STAGED_ADD, new TreeSet<>());
+        writeObject(STAGED_REMOVED, new TreeSet<>());
     }
 
     public static void removeFile(String fileName) {
         validateGitletRepo();
 
-        HashMap<String, String> temp = readObject(Commit.LATEST_MAP, HashMap.class);
-        Commit latestCommit = Commit.getCommit(Branch.getHeadActive());
-        TreeSet<String> stage = Utils.readObject(STAGED_ADD, TreeSet.class);
-        TreeSet<String> stage_remove = Utils.readObject(STAGED_REMOVED, TreeSet.class);
+        HashMap<String, String> temp = readObject(LATEST_MAP, HashMap.class);
+        Commit latestCommit = getCommit(getHeadActive());
+        TreeSet<String> stage_add = readObject(STAGED_ADD, TreeSet.class);
+        TreeSet<String> stage_remove = readObject(STAGED_REMOVED, TreeSet.class);
 
         if (latestCommit.getSha(fileName) != null && !stage_remove.contains(fileName)) {
             File f = new File(CWD, fileName);
             f.delete();
 
+            File unnecessary = join(TEMP, temp.get(fileName));
+            unnecessary.delete();
+
             temp.remove(fileName);
-            stage.remove(fileName);
+            stage_add.remove(fileName);
             stage_remove.add(fileName);
-        } else if (stage.contains(fileName)) {
+        } else if (stage_add.contains(fileName)) {
+            File unnecessary = join(TEMP, temp.get(fileName));
+            unnecessary.delete();
+
             temp.remove(fileName);
-            stage.remove(fileName);
+            stage_add.remove(fileName);
         } else {
             System.out.println("No reason to remove the file.");
             return;
         }
 
-        Utils.writeObject(Commit.LATEST_MAP, temp);
-        Utils.writeObject(STAGED_ADD, stage);
-        Utils.writeObject(STAGED_REMOVED, stage_remove);
+        writeObject(LATEST_MAP, temp);
+        writeObject(STAGED_ADD, stage_add);
+        writeObject(STAGED_REMOVED, stage_remove);
     }
 
     private static void printCommit(String shaOfi, Commit c) {
@@ -181,34 +188,34 @@ public class Repository {
 
     public static void printLog() {
         validateGitletRepo();
-        String shaOfi = Branch.getHeadActive();
-        Commit i = Commit.getCommit(shaOfi);
+        String shaOfi = getHeadActive();
+        Commit i = getCommit(shaOfi);
 
         while (i != null) {
             printCommit(shaOfi, i);
 
             shaOfi = i.getParent();
-            i = Commit.getCommit(shaOfi);
+            i = getCommit(shaOfi);
         }
     }
 
     public static void globalLog() {
         validateGitletRepo();
-        List<String> l = Utils.plainFilenamesIn(Commit.COMMITS_DIR);
+        List<String> l = plainFilenamesIn(COMMITS_DIR);
 
         for (String i : l) {
-            printCommit(i, Commit.getCommit(i));
+            printCommit(i, getCommit(i));
         }
     }
 
     public static void findCommits(String msg) {
         validateGitletRepo();
-        List<String> l = Utils.plainFilenamesIn(Commit.COMMITS_DIR);
+        List<String> l = plainFilenamesIn(COMMITS_DIR);
         Commit c;
         boolean found = false;
 
         for (String i : l) {
-            c = Commit.getCommit(i);
+            c = getCommit(i);
 
             if (c.getMsg().equals(msg)) {
                 System.out.println(i);
@@ -235,7 +242,8 @@ public class Repository {
         for (String i : filesInDir) {
             if (!temp.containsKey(i)) {
                 if (!wantList) {
-                    return null;
+                    System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
+                    System.exit(0);
                 }
 
                 untracked.add(i);
@@ -249,8 +257,8 @@ public class Repository {
         validateGitletRepo();
 
         System.out.println("=== Branches ===");
-        List<String> branchList = Utils.plainFilenamesIn(Branch.BRANCH_DIR);
-        String activeName = Branch.getActiveBranchName();
+        List<String> branchList = plainFilenamesIn(LAST_COMMIT);
+        String activeName = getActiveBranchName();
 
         System.out.println("*" + activeName);
         for (String i : branchList) {
@@ -260,28 +268,28 @@ public class Repository {
         }
 
         System.out.println("\n=== Staged Files ===");
-        TreeSet<String> stage = Utils.readObject(STAGED_ADD, TreeSet.class);
+        TreeSet<String> stage_add = readObject(STAGED_ADD, TreeSet.class);
 
-        for (String i : stage) {
+        for (String i : stage_add) {
             System.out.println(i);
         }
 
         System.out.println("\n=== Removed Files ===");
-        TreeSet<String> stage_remove = Utils.readObject(STAGED_REMOVED, TreeSet.class);
+        TreeSet<String> stage_remove = readObject(STAGED_REMOVED, TreeSet.class);
 
         for (String i : stage_remove) {
             System.out.println(i);
         }
 
         System.out.println("\n=== Modifications Not Staged For Commit ===");
-        HashMap<String, String> temp = Utils.readObject(Commit.LATEST_MAP, HashMap.class);
+        HashMap<String, String> temp = readObject(LATEST_MAP, HashMap.class);
         TreeSet<String> modified = new TreeSet<>();
 
         for (Map.Entry<String, String> i : temp.entrySet()) {
-            File inCWD = Utils.join(CWD, i.getKey());
+            File inCWD = join(CWD, i.getKey());
 
             if (inCWD.exists()) {
-                String inCWDSha = Utils.sha1Object(Utils.readContents(inCWD));
+                String inCWDSha = sha1Object(readContents(inCWD), i.getKey());
 
                 // Checking if staged contents are same as in working directory
                 if (!inCWDSha.equals(i.getValue())) {
@@ -297,7 +305,7 @@ public class Repository {
         }
 
         System.out.println("\n=== Untracked Files ===");
-        List<String> dr = Utils.plainFilenamesIn(CWD);
+        List<String> dr = plainFilenamesIn(CWD);
         TreeSet<String> untracked = untrackedFiles(dr, temp, true);
 
         for (String i : untracked) {
@@ -309,29 +317,29 @@ public class Repository {
 
     public static void createBranch(String branchName) {
         validateGitletRepo();
-        List<String> l = Utils.plainFilenamesIn(Branch.BRANCH_DIR);
+        List<String> l = plainFilenamesIn(LAST_COMMIT);
 
         if (l.contains(branchName)) {
             System.out.println("A branch with that name already exists.");
             System.exit(0);
         }
 
-        Branch br = Branch.getActiveBranch();
-        br.createNewBranch(branchName);
+        createNewBranch(branchName);
     }
 
     /**
-     * Returns file Pointer of the file with the given sha
+     * Replaces the files in CWD with file that has the given sha
      */
     private static void writeFileCWD(String fileName, String shaOfFile) {
-        File f = Utils.join(OBJECTS_DIR, shaOfFile.substring(0, 1), shaOfFile);
-        File fileInWD = Utils.join(CWD, fileName);
-
-        Utils.writeContents(fileInWD, Utils.readContents(f));
+        try {
+            Files.copy(Paths.get(OBJECTS_DIR.getAbsolutePath(), shaOfFile.substring(0, 1), shaOfFile),
+                    CWD.toPath().resolve(fileName), StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException ignored) {
+        }
     }
 
     public static void checkOutFile(String shaOfC, String fileName) {
-        Commit c = Commit.getCommit(shaOfC);
+        Commit c = getCommit(shaOfC);
         String shaOfFile = c.getSha(fileName);
 
         if (shaOfFile == null) {
@@ -343,66 +351,61 @@ public class Repository {
     }
 
     private static void copyFromREPO(String shaOfCommit) {
-        List<String> dr = Utils.plainFilenamesIn(CWD);
-        HashMap<String, String> temp = Utils.readObject(Commit.LATEST_MAP, HashMap.class);
-        Commit branchCommit = Commit.getCommit(shaOfCommit);
+        List<String> dr = plainFilenamesIn(CWD);
+        HashMap<String, String> temp = readObject(LATEST_MAP, HashMap.class);
 
         if (!(dr == null)) {
-            if (untrackedFiles(dr, temp, false) == null) {
-                System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
-                System.exit(0);
-            }
+            untrackedFiles(dr, temp, false);
 
             for (String i : dr) {
-                File delete = Utils.join(CWD, i);
+                File delete = join(CWD, i);
                 delete.delete();
             }
         }
 
-        HashMap<String, String> commitFiles = branchCommit.getFilesInCommit();
-
-        for (Map.Entry<String, String> i : commitFiles.entrySet()) {
+        Commit branchCommit = getCommit(shaOfCommit);
+        for (Map.Entry<String, String> i : branchCommit.getFilesInCommit().entrySet()) {
             writeFileCWD(i.getKey(), i.getValue());
         }
 
-        Utils.writeObject(STAGED_ADD, new TreeSet<>());
-        Utils.writeObject(STAGED_REMOVED, new TreeSet<>());
-        Utils.writeObject(Commit.LATEST_MAP, commitFiles);
+        writeObject(STAGED_ADD, new TreeSet<>());
+        writeObject(STAGED_REMOVED, new TreeSet<>());
+        writeObject(LATEST_MAP, branchCommit.getFilesInCommit());
     }
 
     public static void checkOutBranch(String branchName) {
         validateGitletRepo();
 
-        if (branchName.equals(Branch.getActiveBranchName())) {
+        if (branchName.equals(getActiveBranchName())) {
             System.out.println("No need to checkout the current branch.");
             System.exit(0);
         }
 
-        File branchFile = Utils.join(Branch.BRANCH_DIR, branchName);
+        File branchFile = join(LAST_COMMIT, branchName);
         if (!branchFile.exists()) {
             System.out.println("No such branch exists.");
             System.exit(0);
         }
 
-        copyFromREPO(Branch.getHead(branchName));
-        Utils.writeObject(Branch.ACTIVE_BRANCH, branchName);
+        copyFromREPO(getHead(branchName));
+        writeObject(HEAD, branchName);
     }
 
     public static void removeBranch(String branchName) {
         validateGitletRepo();
 
-        if (branchName.equals(Branch.getActiveBranchName())) {
+        if (branchName.equals(getActiveBranchName())) {
             System.out.println("Cannot remove the current branch.");
             System.exit(0);
         }
 
-        File branchFile = Utils.join(Branch.BRANCH_DIR, branchName);
+        File branchFile = join(LAST_COMMIT, branchName);
         if (!branchFile.exists()) {
             System.out.println("A branch with that name does not exist.");
             System.exit(0);
         }
 
-        File branchHEAD = new File(Branch.HEADS_DIR, branchName);
+        File branchHEAD = new File(LAST_COMMIT, branchName);
         branchFile.delete();
         branchHEAD.delete();
     }
@@ -410,10 +413,43 @@ public class Repository {
     public static void reset(String shaOfCommit) {
         validateGitletRepo();
 
-        String fullCommit = Commit.getFullCommit(shaOfCommit);
+        String fullCommit = getFullCommit(shaOfCommit);
         copyFromREPO(fullCommit);
 
-        File Head = Utils.join(Branch.HEADS_DIR, Branch.getActiveBranchName());
-        Utils.writeObject(Head, fullCommit);
+        File Head = join(LAST_COMMIT, getActiveBranchName());
+        writeObject(Head, fullCommit);
+    }
+
+    public static void mergebranch(String branchName) {
+        // Checking for non-existing branch
+        File branchFile = join(LAST_COMMIT, branchName);
+        if (!branchFile.exists()) {
+            System.out.println("A branch with that name does not exist.");
+            System.exit(0);
+        }
+
+        // Checking if branch is same as active branch
+        String activeBranch = getActiveBranchName();
+        if (activeBranch.equals(branchName)) {
+            System.out.println("Cannot merge a branch with itself.");
+            System.exit(0);
+        }
+
+        // Checking for untracked files
+        List<String> dr = plainFilenamesIn(CWD);
+        HashMap<String, String> temp = readObject(LATEST_MAP, HashMap.class);
+        if (!(dr == null)) {
+            untrackedFiles(dr, temp, false);
+        }
+
+        // Checking for uncommitted changes
+        TreeSet<String> stage_add = readObject(STAGED_ADD, TreeSet.class);
+        TreeSet<String> stage_remove = readObject(STAGED_REMOVED, TreeSet.class);
+        if (!stage_add.isEmpty() || !stage_remove.isEmpty()) {
+            System.out.println("You have uncommitted changes.");
+            System.exit(0);
+        }
+
+        Branch.mergeBranch(activeBranch, branchName);
     }
 }

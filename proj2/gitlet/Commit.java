@@ -22,15 +22,23 @@ public class Commit implements Serializable {
     private final Date TIMESTAMP;
     /** Sha of the parent commit */
     private final String PARENT_COMMIT;
+    /** Stores the second Parent of a merge */
+    private String secondParent = null;
     /** Folder in which commits are stored */
     public static final File COMMITS_DIR = Utils.join(Repository.GITLET_DIR, "commits");
-    public static final File LATEST_MAP = Utils.join(Repository.GITLET_DIR, "latestcommit");
+    /** All the files that should be tracked and untracked in the next commit */
+    public static final File LATEST_MAP = Utils.join(Repository.STAGING_AREA, "nextMap");
 
     public Commit(Date d, String shaOParent, String msg, HashMap<String, String> files) {
         TIMESTAMP = d;
         PARENT_COMMIT = shaOParent;
         MSG = msg;
         FILES_IN_COMMIT = files;
+    }
+
+    public Commit(Date d, String shaOParent, String secondParent, String msg, HashMap<String, String> files) {
+        this(d, shaOParent, msg, files);
+        this.secondParent = secondParent;
     }
 
     /** Returns the Sha of the given filename
@@ -42,22 +50,32 @@ public class Commit implements Serializable {
         return FILES_IN_COMMIT.get(filename);
     }
 
-    private static class firstSixCompare implements Comparator<String> {
-        private final int SIZE;
-        firstSixCompare(int s) {
-            SIZE = s;
-        }
-
+    private static class firstXCompare implements Comparator<String> {
         @Override
-        public int compare(String s, String t1) {
-            return s.substring(0, SIZE).compareTo(t1.substring(0, SIZE));
+        public int compare(String s1, String s2) {
+            int limit = Math.min(s1.length(), s2.length());
+
+            int i = 0;
+            while (i < limit) {
+                char ch1 = s1.charAt(i);
+                char ch2 = s2.charAt(i);
+                if (ch1 != ch2) {
+                    return ch1 - ch2;
+                }
+                ++i;
+            }
+            return 0;
         }
     }
 
     public static String getFullCommit(String halfCommit) {
+        if (halfCommit.length() == 40 || halfCommit.length() < 6) {
+            return halfCommit;
+        }
+
         List<String> l = Utils.plainFilenamesIn(COMMITS_DIR);
 
-        int index = Collections.binarySearch(l, halfCommit, new firstSixCompare(halfCommit.length()));
+        int index = Collections.binarySearch(l, halfCommit, new firstXCompare());
         if (index >= 0) {
             return l.get(index);
         }
@@ -77,12 +95,7 @@ public class Commit implements Serializable {
             return null;
         }
 
-        File f = Utils.join(COMMITS_DIR, shaOfCommit);
-
-        if (shaOfCommit.length() < 40 && shaOfCommit.length() > 5) {
-            String fullCommit = getFullCommit(shaOfCommit);
-            f = Utils.join(COMMITS_DIR, fullCommit);
-        }
+        File f = Utils.join(COMMITS_DIR, getFullCommit(shaOfCommit));
 
         if (!f.exists()) {
             System.out.println("No commit with that id exists.");
@@ -112,6 +125,13 @@ public class Commit implements Serializable {
 
         formatter.format("%ta %tb %td %tT %tY %tz", TIMESTAMP, TIMESTAMP, TIMESTAMP,
                 TIMESTAMP, TIMESTAMP, TIMESTAMP);
+
+        if (secondParent != null) {
+            sb.append("\nMerge: ");
+            sb.append(PARENT_COMMIT, 0, 6);
+            sb.append(secondParent, 0, 6);
+        }
+
         sb.append("\n");
         sb.append(MSG);
 
