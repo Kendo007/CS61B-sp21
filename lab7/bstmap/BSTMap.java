@@ -2,6 +2,8 @@ package bstmap;
 
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Set;
+
 public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V> {
     /** Stores the size of the Map */
     private int size;
@@ -68,8 +70,8 @@ public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V> {
     }
 
     @Override
-    public HashSet<K> keySet() {
-        HashSet<K> s = new HashSet<>();
+    public Set<K> keySet() {
+        Set<K> s = new HashSet<>();
 
         for (K i : this) {
             s.add(i);
@@ -231,6 +233,12 @@ public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V> {
     @Override
     public Iterator<K> iterator() {
         return new TraverseBinaryTree();
+    }
+
+    public void printInOrder() {
+        for (K i : this) {
+            System.out.println(i);
+        }
     }
 
     private class BSTNode {
