@@ -175,33 +175,15 @@ public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V> {
     }
 
     private class TraverseBinaryTree implements Iterator<K> {
-        private BSTNode returnNode = root;
-        boolean visitedLeft = false;
-        int countNodes = 0;
-        boolean rootReturned = false;
+        private BSTNode returnNode = leftMost(root);
+        boolean runGet = false;
 
         private BSTNode getNext(BSTNode currNode) {
-            if (countNodes == size || currNode == null) {
+            if (currNode == null) {
                 return null;
             }
 
-            if (currNode.isLeaf() && returnNode != currNode) {
-                return currNode;
-            }
-
             if (returnNode == currNode) {
-                if (currNode.parent == null) {
-                    if (!visitedLeft) {
-                        visitedLeft = true;
-                        return getNext(leftMost(currNode));
-                    } else if (!rootReturned) {
-                        rootReturned = true;
-                        return currNode;
-                    } else {
-                        return getNext(leftMost(currNode.rightChild));
-                    }
-                }
-
                 if (currNode.rightChild == null) {
                     return getNext(currNode.parent);
                 } else {
@@ -219,13 +201,16 @@ public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V> {
 
         @Override
         public boolean hasNext() {
-            returnNode = getNext(returnNode);
+            if (runGet) {
+                returnNode = getNext(returnNode);
+            }
+
+            runGet = true;
             return returnNode != null;
         }
 
         @Override
         public K next() {
-            ++countNodes;
             return returnNode.key;
         }
     }
