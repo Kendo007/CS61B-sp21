@@ -19,9 +19,9 @@ public class Stage {
     public static final File STAGED_REMOVED = join(STAGING_AREA, "remove");
     /** All the files that should be tracked and untracked in the next commit */
     public static final File LATEST_MAP = Utils.join(STAGING_AREA, "nextMap");
-    public static TreeSet<String> stageAdd;
-    public static TreeSet<String> stageRemove;
-    public static HashMap<String, String> nextMap;
+    protected static TreeSet<String> stageAdd;
+    protected static TreeSet<String> stageRemove;
+    protected static HashMap<String, String> nextMap;
 
     /** Loads full staging area in the private members */
     public static void loadFullStage() {

@@ -15,6 +15,8 @@ import java.util.*;
 public class Commit implements Serializable {
     @Serial
     private static final long serialVersionUID = 65296850946917690L;
+
+    private static final int SHA_LENGTH = 40;
     /** The message of this Commit. */
     private final String MSG;
     /** Reference to all the files in the commit */
@@ -69,7 +71,7 @@ public class Commit implements Serializable {
     }
 
     public static String getFullCommit(String halfCommit) {
-        if (halfCommit.length() == 40 || halfCommit.length() < 6) {
+        if (halfCommit.length() >= SHA_LENGTH || halfCommit.length() < 6) {
             return halfCommit;
         }
 
@@ -97,12 +99,14 @@ public class Commit implements Serializable {
 
         File f = Utils.join(COMMITS_DIR, getFullCommit(shaOfCommit));
 
-        if (!f.exists()) {
+        try {
+            return Utils.readObject(f, Commit.class);
+        } catch (IllegalArgumentException ignored) {
             System.out.println("No commit with that id exists.");
             System.exit(0);
         }
 
-        return Utils.readObject(f, Commit.class);
+        return null;
     }
 
     public String getMsg() {
@@ -111,6 +115,10 @@ public class Commit implements Serializable {
 
     public String getParent() {
         return PARENT_COMMIT;
+    }
+
+    public String getSecondParent() {
+        return secondParent;
     }
 
     public HashMap<String, String> getFilesInCommit() {

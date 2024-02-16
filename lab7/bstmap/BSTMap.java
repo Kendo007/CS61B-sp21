@@ -189,8 +189,6 @@ public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V> {
                 } else {
                     return getNext(leftMost(currNode.rightChild));
                 }
-            } else if (returnNode == currNode.leftChild) {
-                return currNode;
             } else if (returnNode == currNode.rightChild) {
                 returnNode = currNode;
                 return getNext(currNode.parent);

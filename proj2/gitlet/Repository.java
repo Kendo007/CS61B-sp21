@@ -47,7 +47,8 @@ public class Repository {
      */
     public static void createRepository() {
         if (GITLET_DIR.exists()) {
-            System.out.println("A Gitlet version-control system already exists in the current directory.");
+            System.out.println("A Gitlet version-control system "
+                    + "already exists in the current directory.");
             return;
         }
 
@@ -172,8 +173,8 @@ public class Repository {
     }
 
     private static void printCommit(String shaOfi, Commit c) {
-        System.out.println("===");
-        System.out.println("commit " + shaOfi);
+        System.out.print("===\ncommit ");
+        System.out.println(shaOfi);
         System.out.println(c);
         System.out.println();
     }
@@ -182,8 +183,10 @@ public class Repository {
         validateGitletRepo();
         String shaOfi = getHeadActive();
         Commit i = getCommit(shaOfi);
+        int c = 0;
 
         while (i != null) {
+            ++c;
             printCommit(shaOfi, i);
 
             shaOfi = i.getParent();
@@ -202,14 +205,14 @@ public class Repository {
 
     public static void findCommits(String msg) {
         validateGitletRepo();
-        List<String> l = plainFilenamesIn(COMMITS_DIR);
+        String[] files = COMMITS_DIR.list();
         Commit c;
         boolean found = false;
 
-        for (String i : l) {
+        for (String i : files) {
             c = getCommit(i);
 
-            if (c.getMsg().equals(msg)) {
+            if (msg.equals(c.getMsg())) {
                 System.out.println(i);
                 found = true;
             }
@@ -227,7 +230,8 @@ public class Repository {
      * @param temp The staging area hashmap
      * @return Untracked files in the directpry
      */
-    private static TreeSet<String> untrackedFiles(List<String> filesInDir, HashMap<String, String> temp,
+    private static TreeSet<String> untrackedFiles(List<String> filesInDir,
+                                                  HashMap<String, String> temp,
                                                   boolean wantList) {
         TreeSet<String> untracked = new TreeSet<>();
 
@@ -319,15 +323,20 @@ public class Repository {
     /**
      * Replaces the files in CWD with file that has the given sha
      */
-    private static void writeFileCWD(String fileName, String shaOfFile) {
+    protected static void writeFileCWD(String fileName, String shaOfFile) {
         try {
-            Files.copy(Paths.get(OBJECTS_DIR.getAbsolutePath(), shaOfFile.substring(0, 1), shaOfFile),
-                    CWD.toPath().resolve(fileName), StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(Paths.get(OBJECTS_DIR.getAbsolutePath(),
+                            shaOfFile.substring(0, 1), shaOfFile),
+                    CWD.toPath().resolve(fileName),
+                    StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException ignored) {
             return;
         }
     }
 
+    /**
+     * Checkout the file in the commit to the working directory
+     */
     public static void checkOutFile(String shaOfC, String fileName) {
         Commit c = getCommit(shaOfC);
         String shaOfFile = c.getSha(fileName);
@@ -340,6 +349,9 @@ public class Repository {
         writeFileCWD(fileName, shaOfFile);
     }
 
+    /**
+     * Writes everything from the given commit to the Working directory
+     */
     private static void copyFromREPO(String shaOfCommit) {
         List<String> dr = plainFilenamesIn(CWD);
         loadStageMap();
@@ -363,6 +375,9 @@ public class Repository {
         newArea();
     }
 
+    /**
+     * Checks out to the given branch and replaces everything
+     */
     public static void checkOutBranch(String branchName) {
         validateGitletRepo();
 
@@ -381,6 +396,10 @@ public class Repository {
         writeObject(HEAD, branchName);
     }
 
+    /**
+     * Removes the given branch from the branch list does not affect any
+     * associated commit
+     */
     public static void removeBranch(String branchName) {
         validateGitletRepo();
 
@@ -400,6 +419,9 @@ public class Repository {
         branchHEAD.delete();
     }
 
+    /**
+     * Resets the active branch to the given commit
+     */
     public static void reset(String shaOfCommit) {
         validateGitletRepo();
 
@@ -410,7 +432,12 @@ public class Repository {
         writeObject(head, fullCommit);
     }
 
+    /**
+     * Merges the given branch name into the current active branch
+     */
     public static void mergebranch(String branchName) {
+        validateGitletRepo();
+
         // Checking for non-existing branch
         File branchFile = join(LAST_COMMIT, branchName);
         if (!branchFile.exists()) {
