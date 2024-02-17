@@ -54,18 +54,20 @@ public class Branch {
     public static void addCommit(String msg, Date d, HashMap<String, String> temp,
                                  String secondParent) {
         String activeBranch = getActiveBranchName();
+        String lastCommit = getHead(activeBranch);
+
         Commit c;
         if (secondParent == null) {
-            c = new Commit(d, getHead(activeBranch), msg, temp);
+            c = new Commit(d, lastCommit, msg, temp);
         } else {
-            c = new Commit(d, getHead(activeBranch), secondParent, msg, temp);
+            c = new Commit(d, lastCommit, secondParent, msg, temp);
         }
 
-        String shaOfc = Utils.sha1(c.toString());
-        File newCommit = Utils.join(Commit.COMMITS_DIR, shaOfc);
+        String shaOfc = lastCommit == null ? sha1(c.toString()) : sha1(c.toString(), lastCommit);
+        File newCommit = join(Commit.COMMITS_DIR, shaOfc);
 
-        Utils.writeObject(newCommit, c);
-        Utils.writeObject(Utils.join(LAST_COMMIT, activeBranch), shaOfc);
+        writeObject(newCommit, c);
+        writeObject(join(LAST_COMMIT, activeBranch), shaOfc);
     }
 
     public static void createNewBranch(String newBranchName) {
@@ -183,18 +185,17 @@ public class Branch {
             System.out.println("Encountered a merge conflict.");
         }
 
-        String newFileSha = Utils.sha1Object("<<<<<<< HEAD\n", readString(headFileSha), "=======\n",
-                readString(otherFileSha), ">>>>>>>", fileName);
+        String s = "<<<<<<< HEAD" + "\n" +
+                readString(headFileSha) + "=======" + "\n" +
+                readString(otherFileSha) + ">>>>>>>";
+
+        String newFileSha = Utils.sha1Object(s, fileName);
 
         File dir = join(Repository.OBJECTS_DIR, newFileSha.substring(0, 1));
         dir.mkdir();
 
-        writeContents(join(dir, newFileSha),
-                "<<<<<<< HEAD\n", readString(headFileSha), "=======\n",
-                readString(otherFileSha), ">>>>>>>");
-        writeContents(join(Repository.CWD, fileName),
-                "<<<<<<< HEAD\n", readString(headFileSha), "=======\n",
-                readString(otherFileSha), ">>>>>>>");
+        writeContents(join(dir, newFileSha), s);
+        writeContents(join(Repository.CWD, fileName), s);
 
         nextMap.put(fileName, newFileSha);
     }
