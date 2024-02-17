@@ -117,8 +117,7 @@ public class Branch {
      * Searches for the common point from the given graph and other commit
      *\
      */
-    private static Point search(String commitSha, int weight,
-                                HashSet<String> graph,
+    private static Point search(String commitSha, int weight, HashSet<String> graph,
                                 HashSet<String> searched) {
         if (searched.contains(commitSha)) {
             return null;
@@ -134,8 +133,26 @@ public class Branch {
             Point first = search(c.getParent(), weight + 1, graph, searched);
             Point second = search(c.getSecondParent(), weight + 1, graph, searched);
 
-            if (second != null && second.weight < first.weight) {
-                return second;
+            if (second != null) {
+                if (second.weight < first.weight) {
+                    return second;
+                } else if (second.weight > first.weight) {
+                    return first;
+                } else {
+                    HashSet<String> hs = new HashSet<>();
+                    hs.add(first.commitID);
+                    hs.add(second.commitID);
+
+                    // Will result in a infinite loop if the distance from head is same
+                    if (shaIfEqual != null) {
+                        String temp = shaIfEqual;
+                        shaIfEqual = null;
+
+                        return search(temp, 0, hs, new HashSet<>());
+                    } else {
+                        return first;
+                    }
+                }
             } else {
                 return first;
             }
@@ -143,6 +160,8 @@ public class Branch {
             return search(c.getParent(), weight + 1, graph, searched);
         }
     }
+
+    private static String shaIfEqual;
 
     /**
      * Gives all the files in the split Point
@@ -153,6 +172,7 @@ public class Branch {
      */
     private static String getSplitPoint(String branchOneSha, String branchTwoSha) {
         HashSet<String> graph = new HashSet<>();
+        shaIfEqual = branchOneSha;
         createGraph(branchOneSha, graph);
 
         Point p = search(branchTwoSha, 0, graph, new HashSet<>());
@@ -185,9 +205,8 @@ public class Branch {
             System.out.println("Encountered a merge conflict.");
         }
 
-        String s = "<<<<<<< HEAD" + "\n" +
-                readString(headFileSha) + "=======" + "\n" +
-                readString(otherFileSha) + ">>>>>>>";
+        String s = String.format("<<<<<<< HEAD\n%s=======\n%s>>>>>>>\n",
+                readString(headFileSha), readString(otherFileSha));
 
         String newFileSha = Utils.sha1Object(s, fileName);
 
