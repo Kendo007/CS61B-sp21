@@ -57,6 +57,7 @@ public class Repository {
         OBJECTS_DIR.mkdir();
         COMMITS_DIR.mkdir();
         LAST_COMMIT.mkdir();
+        RemoteRepository.REMOTE.mkdir();
 
         // Setting up branches
         writeObject(HEAD, "master");
