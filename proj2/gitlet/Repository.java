@@ -256,9 +256,23 @@ public class Repository {
         loadFullStage();
 
         System.out.println("=== Branches ===");
-        List<String> branchList = plainFilenamesIn(LAST_COMMIT);
-        String activeName = getActiveBranchName();
+        TreeSet<String> branchList = new TreeSet<>();
+        File[] files = LAST_COMMIT.listFiles();
 
+        for (File i : files) {
+            if (i.isDirectory()) {
+                String[] l = i.list();
+                String name = i.getName() + "/";
+
+                for (String j : l) {
+                    branchList.add(name + j);
+                }
+            } else {
+                branchList.add(i.getName());
+            }
+        }
+
+        String activeName = getActiveBranchName();
         System.out.println("*" + activeName);
         for (String i : branchList) {
             if (!i.equals(activeName)) {

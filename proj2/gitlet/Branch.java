@@ -89,18 +89,25 @@ public class Branch {
      * @param commitSha the sha of the given branch
      * @param s         set to which strings should be added
      */
-    private static void createGraph(String commitSha, HashSet<String> s) {
-        if (commitSha == null || s.contains(commitSha)) {
+    private static void createGraph(String commitSha, HashMap<String, Integer> s, int weight) {
+        if (commitSha == null) {
             return;
         }
 
-        s.add(commitSha);
+        if (s.containsKey(commitSha)) {
+            if (weight + 1 < s.get(commitSha)) {
+                s.put(commitSha, weight + 1);
+            }
+            return;
+        }
+
+        s.put(commitSha, weight);
         Commit c = getCommit(commitSha);
 
         if (c.getSecondParent() != null) {
-            createGraph(c.getSecondParent(), s);
+            createGraph(c.getSecondParent(), s, weight + 1);
         }
-        createGraph(c.getParent(), s);
+        createGraph(c.getParent(), s, weight + 1);
     }
 
     private static class Point {
@@ -117,14 +124,14 @@ public class Branch {
      * Searches for the common point from the given graph and other commit
      *\
      */
-    private static Point search(String commitSha, int weight, HashSet<String> graph,
+    private static Point search(String commitSha, int weight, HashMap<String, Integer> graph,
                                 HashSet<String> searched) {
         if (searched.contains(commitSha)) {
             return null;
         }
 
         searched.add(commitSha);
-        if (graph.contains(commitSha)) {
+        if (graph.containsKey(commitSha)) {
             return new Point(weight, commitSha);
         }
 
@@ -138,20 +145,10 @@ public class Branch {
                     return second;
                 } else if (second.weight > first.weight) {
                     return first;
+                } else if (graph.get(first.commitID) < graph.get(second.commitID)) {
+                    return first;
                 } else {
-                    HashSet<String> hs = new HashSet<>();
-                    hs.add(first.commitID);
-                    hs.add(second.commitID);
-
-                    // Will result in a infinite loop if the distance from head is same
-                    if (shaIfEqual != null) {
-                        String temp = shaIfEqual;
-                        shaIfEqual = null;
-
-                        return search(temp, 0, hs, new HashSet<>());
-                    } else {
-                        return first;
-                    }
+                    return second;
                 }
             } else {
                 return first;
@@ -161,8 +158,6 @@ public class Branch {
         }
     }
 
-    private static String shaIfEqual;
-
     /**
      * Gives all the files in the split Point
      *
@@ -171,9 +166,8 @@ public class Branch {
      * @return The Reference to files in the splitPoint
      */
     private static String getSplitPoint(String branchOneSha, String branchTwoSha) {
-        HashSet<String> graph = new HashSet<>();
-        shaIfEqual = branchOneSha;
-        createGraph(branchOneSha, graph);
+        HashMap<String, Integer> graph = new HashMap<>();
+        createGraph(branchOneSha, graph, 0);
 
         Point p = search(branchTwoSha, 0, graph, new HashSet<>());
         return p.commitID;

@@ -122,7 +122,12 @@ public class RemoteRepository extends Repository implements Serializable {
             }
 
             if (copy) {
-                writeObject(COMMITS_DIR, c);
+                File f = join(COMMITS_DIR, myHeadSha);
+
+                if (f.exists()) {
+                    break;
+                }
+                writeObject(f, c);
             } else {
                 hs.add(myHeadSha);
             }
@@ -137,7 +142,6 @@ public class RemoteRepository extends Repository implements Serializable {
         }
 
         writeObject(join(LAST_COMMIT, remoteBranchName), temp);
-        writeObject(HEAD, remoteBranchName);
         return hs;
     }
 
