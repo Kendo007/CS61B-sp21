@@ -3,12 +3,15 @@ package byow.Core;
 import byow.TileEngine.TERenderer;
 import byow.TileEngine.TETile;
 
+import java.util.Random;
+
+import static byow.Core.World.createWorld;
+
 public class Engine {
     TERenderer ter = new TERenderer();
     /* Feel free to change the width and height. */
-    public static final int WIDTH = 80;
-    public static final int HEIGHT = 30;
-
+    public static final int WIDTH = 100;
+    public static final int HEIGHT = 60;
     /**
      * Method used for exploring a fresh world. This method should handle all inputs,
      * including inputs from the main menu.
@@ -38,7 +41,6 @@ public class Engine {
      * @return the 2D TETile[][] representing the state of the world
      */
     public TETile[][] interactWithInputString(String input) {
-        // TODO: Fill out this method so that it run the engine using the input
         // passed in as an argument, and return a 2D tile representation of the
         // world that would have been drawn if the same inputs had been given
         // to interactWithKeyboard().
@@ -46,7 +48,16 @@ public class Engine {
         // See proj3.byow.InputDemo for a demo of how you can make a nice clean interface
         // that works for many different input types.
 
-        TETile[][] finalWorldFrame = null;
+        TETile[][] finalWorldFrame = new TETile[WIDTH][HEIGHT];
+
+        if (input.charAt(0) != 'N' || input.charAt(input.length() - 1) != 'S')  {
+            System.out.println("Wrong seed Input");
+            return null;
+        }
+
+        int seed = Integer.parseInt(input.substring(1, input.length() - 1));
+        createWorld(finalWorldFrame, new Random(seed));
+
         return finalWorldFrame;
     }
 }
