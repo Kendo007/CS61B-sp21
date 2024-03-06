@@ -50,7 +50,7 @@ public class Engine {
 
         TETile[][] finalWorldFrame = new TETile[WIDTH][HEIGHT];
 
-        int seed = Integer.parseInt(input.substring(1, input.length() - 1));
+        long seed = Long.parseLong(input.substring(1, input.length() - 1));
         createWorld(finalWorldFrame, new Random(seed));
 
         return finalWorldFrame;
