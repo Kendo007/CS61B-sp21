@@ -361,6 +361,14 @@ public class Repository {
             System.exit(0);
         }
 
+        loadFullStage();
+
+        stageAdd.remove(fileName);
+        stageRemove.remove(fileName);
+        nextMap.put(fileName, shaOfFile);
+
+        saveFullStage();
+
         writeFileCWD(fileName, shaOfFile);
     }
 
